@@ -37,12 +37,16 @@
 
 ## 一个真实例子
 
-仓库内置了一个 `medium` preset，用来把 Medium 作者页的相对链接改写成完整链接。
+仓库当前内置了两类 preset：
+
+1. `medium`：把 Medium 作者页的相对链接改写成完整链接。
+2. `zh-smart-quotes`：把中文正文语境里的半角双引号改写成中文全角引号。
 
 使用方式：
 
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
+npm run publish:md -- --input ./translated/article-zh.md --dry-run --preset zh-smart-quotes
 ```
 
 当前支持的内置别名是：
@@ -50,6 +54,16 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
 1. `medium`
 2. `builtin:medium`
 3. `preset:medium`
+4. `zh-smart-quotes`
+5. `cn-smart-quotes`
+6. `builtin:zh-smart-quotes`
+7. `preset:zh-smart-quotes`
+
+`zh-smart-quotes` 的边界是保守的：
+
+1. 只改正文文本节点里的成对半角双引号。
+2. 只在引号内容里包含中文字符时才转换。
+3. 不改 frontmatter、代码块、行内代码、链接目标和链接 title。
 
 ## 本地 preset 模块怎么写
 

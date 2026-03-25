@@ -134,17 +134,25 @@ export const preset = {
 
 ## 内置 preset
 
-当前唯一内置 preset 是：
+当前内置 preset 有：
 
 1. `medium`
+2. `zh-smart-quotes`
 
 可用别名：
 
 1. `medium`
 2. `builtin:medium`
 3. `preset:medium`
+4. `zh-smart-quotes`
+5. `cn-smart-quotes`
+6. `builtin:zh-smart-quotes`
+7. `preset:zh-smart-quotes`
 
-它的作用是把 Medium 作者页相对链接改写成绝对链接。
+它们的作用分别是：
+
+1. `medium`：把 Medium 作者页相对链接改写成绝对链接。
+2. `zh-smart-quotes`：把中文语境正文中的半角双引号改写成 `“”`，同时避免误改 frontmatter、代码块、行内代码和链接目标。
 
 ## 加载行为
 

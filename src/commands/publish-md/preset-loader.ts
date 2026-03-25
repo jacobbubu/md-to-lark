@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { rewriteRelativeMediumAuthorLinks } from './presets/medium.js';
+import { rewriteChineseSmartQuotes } from './presets/zh-smart-quotes.js';
 
 export interface MarkdownPresetContext {
   inputPath: string;
@@ -31,6 +32,10 @@ const BUILTIN_MARKDOWN_PRESETS: Readonly<
   medium: {
     transform: rewriteRelativeMediumAuthorLinks,
     aliases: ['medium', 'builtin:medium', 'preset:medium'],
+  },
+  'zh-smart-quotes': {
+    transform: rewriteChineseSmartQuotes,
+    aliases: ['zh-smart-quotes', 'cn-smart-quotes', 'builtin:zh-smart-quotes', 'preset:zh-smart-quotes'],
   },
 });
 
