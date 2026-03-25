@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LAST jQuery Playground</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>LAST jQuery Playground</h1>
+      <div class="controls">
+        <label for="file-select">Example</label>
+        <select id="file-select"></select>
+        <label class="file-upload-label" for="upload-md">Upload</label>
+        <input id="upload-md" type="file" accept=".md,text/markdown,text/plain" />
+        <span id="source-indicator" class="source-indicator">Source: example</span>
+        <button id="run-btn" type="button">Run</button>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <section id="pane-editor" class="panel editor-panel">
+        <h2>Selector / Replacer Code (TypeScript)</h2>
+        <div id="editor"></div>
+      </section>
+
+      <div id="split-main" class="splitter splitter-horizontal" title="Drag to resize"></div>
+
+      <section id="pane-bottom" class="bottom-area">
+        <div id="left-stack" class="stack">
+          <section id="pane-source" class="panel">
+            <h2>Source Markdown</h2>
+            <pre id="markdown-before" class="code"></pre>
+          </section>
+
+          <div id="split-left" class="splitter splitter-horizontal" title="Drag to resize"></div>
+
+          <section id="pane-html" class="panel">
+            <h2>Rendered HTML (from Output Markdown)</h2>
+            <iframe id="html-preview" title="Rendered HTML Preview"></iframe>
+          </section>
+        </div>
+
+        <div id="split-columns" class="splitter splitter-vertical" title="Drag to resize"></div>
+
+        <div id="right-stack" class="stack">
+          <div id="right-top-stack" class="stack">
+            <div id="right-top-row" class="row-stack">
+              <section id="pane-output" class="panel">
+                <h2>Output Markdown</h2>
+                <pre id="markdown-after" class="code"></pre>
+              </section>
+
+              <div id="split-right-top-row" class="splitter splitter-vertical" title="Drag to resize"></div>
+
+              <section id="pane-recipes" class="panel">
+                <h2>Selector / Replacer Recipes</h2>
+                <pre id="selector-recipes" class="code"></pre>
+              </section>
+            </div>
+
+            <div id="split-right-top" class="splitter splitter-horizontal" title="Drag to resize"></div>
+
+            <section id="pane-logs" class="panel">
+              <h2>Execution Logs</h2>
+              <pre id="logs" class="code"></pre>
+            </section>
+          </div>
+
+          <div id="split-right-bottom" class="splitter splitter-horizontal" title="Drag to resize"></div>
+
+          <section id="pane-result" class="panel">
+            <div class="panel-header">
+              <h2>Run Result</h2>
+              <label class="format-control" for="result-format">
+                Format
+                <select id="result-format">
+                  <option value="yaml" selected>YAML</option>
+                  <option value="json">JSON</option>
+                </select>
+              </label>
+            </div>
+            <pre id="result" class="code"></pre>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">Tip: use <code>print(...)</code> to inspect intermediate values, then click Run.</footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "md-to-lark",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "publish-md-to-lark": "dist/cli/publish-md-to-lark.js"
+  },
+  "scripts": {
+    "test": "node --test --import tsx \"tests/**/*.test.ts\"",
+    "test:watch": "node --test --watch --import tsx \"tests/**/*.test.ts\"",
+    "build": "tsc -p tsconfig.json && node scripts/ensure-cli-executable.mjs",
+    "dev": "tsx src/cli/publish-md-to-lark.ts",
+    "dev:playground": "tsx devserver/jquery-playground.ts",
+    "publish:md": "tsx src/cli/publish-md-to-lark.ts",
+    "fetch:board-data": "tsx scripts/print-board-content.ts",
+    "example:module": "tsx examples/module-usage.ts",
+    "start": "node dist/cli/publish-md-to-lark.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
+  },
+  "keywords": [],
+  "author": "jacobbubu <rong.shen@gmail.com>",
+  "license": "ISC",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "hast-util-to-string": "^3.0.1",
+    "rehype-parse": "^9.0.1",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@larksuiteoapi/node-sdk": "^1.59.0",
+    "@types/node": "^25.3.3",
+    "playwright": "^1.58.2",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
