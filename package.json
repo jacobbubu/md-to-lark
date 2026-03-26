@@ -9,6 +9,8 @@
   },
   "scripts": {
     "test": "node --test --import tsx \"tests/**/*.test.ts\"",
+    "test:e2e": "node --test --test-concurrency=1 --import tsx \"tests-e2e/**/*.test.ts\"",
+    "test:e2e:watch": "node --test --test-concurrency=1 --watch --import tsx \"tests-e2e/**/*.test.ts\"",
     "test:watch": "node --test --watch --import tsx \"tests/**/*.test.ts\"",
     "build": "tsc -p tsconfig.json && node scripts/ensure-cli-executable.mjs",
     "dev": "tsx src/cli/publish-md-to-lark.ts",

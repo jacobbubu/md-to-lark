@@ -2,6 +2,8 @@
 
 本目录是 `md-to-lark` 的当前测试体系。其目标是覆盖 CLI 入参、输入分发、pipeline 核心转换、preset、LAST API、Lark 发布链路和共享工具的关键行为。
 
+另有一套独立的 live E2E 测试放在仓库根的 `tests-e2e/`。它不属于默认 `npm test`，只在显式执行 `npm run test:e2e` 时运行，并要求本地存在 `.env-test`。
+
 ## 测试文件与分层
 
 `commands.*.test.ts`：命令层（参数解析、输入分辨、标题策略、发布编排、preset 与兼容 bridge）
@@ -44,8 +46,17 @@
 
 - `npm run check`：类型检查与导出/重构层面的最小安全门控。
 - `npm test`：全量测试（`tests/**/*.test.ts`）。
+- `npm run test:e2e`：真实飞书 live E2E（`tests-e2e/**/*.test.ts`），需要 `.env-test`。
+- `npm run test:e2e:watch`：监听模式运行 live E2E。
 - `npm run test:watch`：监听模式，便于本地迭代。
 - `npm run build`：更新 dist（如需覆盖 `cli.dist.*` 场景）。
+
+## Live E2E 约定
+
+- `tests-e2e/` 只放真实飞书端到端测试，不放 fake client 或 dry-run 场景。
+- `.env-test` 由用户本地维护，并已加入 `.gitignore`。
+- 推荐从现有 `.env` 复制关键字段，再补充 `E2E_TITLE_PREFIX`。
+- live E2E 不会并入默认 `npm test`，避免把真实网络、真实权限和真实写入副作用带进常规回归。
 
 ## Fixture 约定
 
