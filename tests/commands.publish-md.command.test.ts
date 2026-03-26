@@ -82,9 +82,11 @@ test('publishMdToLark dry-run succeeds for single markdown file', async (t) => {
   const sourceOriginal = await readFile(path.join(stageRoot, '00-source', 'original.md'), 'utf8');
   const sourcePreset = await readFile(path.join(stageRoot, '00-source', 'preset.md'), 'utf8');
   const prepared = await readFile(path.join(stageRoot, '01-prepare', 'prepared.md'), 'utf8');
+  const downloadLog = await readFile(path.join(stageRoot, '01-prepare', 'download.log.json'), 'utf8');
   assert.equal(sourceOriginal, '# Dry Run Title\n\ncontent');
   assert.equal(sourcePreset, '# Dry Run Title\n\ncontent');
   assert.equal(prepared, '# Dry Run Title\n\ncontent');
+  assert.match(downloadLog, /"generatedAt":/);
 
   const publishResultText = await readFile(path.join(stageRoot, '05-publish', 'result.json'), 'utf8');
   const publishResult = JSON.parse(publishResultText) as { status: string; title: string; documentId: string | null };

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -29,9 +29,8 @@ test('prepareMarkdownBeforePublish keeps content unchanged when remote image dow
   assert.equal(result.logEntries.length, 1);
   assert.equal(result.logEntries[0]?.status, 'skipped-disabled');
   assert.equal(result.logEntries[0]?.sourceType, 'image');
-
-  const logText = await readFile(result.logFilePath, 'utf8');
-  assert.match(logText, /"remoteImageCount": 1/);
+  assert.equal(result.logFileContent.remoteImageCount, 1);
+  assert.equal(result.logFileContent.entries.length, 1);
 });
 
 test('prepareMarkdownBeforePublish collects yt-dlp line matches and skips when yt-dlp path is missing', async (t) => {

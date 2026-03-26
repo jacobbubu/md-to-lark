@@ -62,9 +62,9 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 
 1. 解析输入集合
 2. 决定标题策略
-3. 装配 pipeline cache 路径
-4. 调用 preset、prepare、AST 转换、BTT 转换和最终发布
-5. 根据 `dry-run` 与真实发布分叉
+3. 选择 preset 与目标文档策略
+4. 组装 publish runtime
+5. 驱动单文件执行器
 
 ### `src/pipeline/`
 
@@ -90,17 +90,23 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 
 当前主文件是：
 
-1. `src/publish/last-normalize.ts`
-2. `src/publish/asset-adapter.ts`
-3. `src/publish/btt-patch.ts`
-4. `src/publish/ids.ts`
+1. `src/publish/runtime.ts`
+2. `src/publish/stage-cache.ts`
+3. `src/publish/process-file.ts`
+4. `src/publish/last-normalize.ts`
+5. `src/publish/asset-adapter.ts`
+6. `src/publish/btt-patch.ts`
+7. `src/publish/ids.ts`
 
 这里负责：
 
-1. 给 `LAST` block 补 BTT id
-2. 给表格应用列宽和对齐启发式
-3. 把本地附件和图片适配成发布期资源
-4. 在 `BTT` 上打 Mermaid 和媒体补丁
+1. 构建运行时配置与 SDK 上下文
+2. 统一 stage cache 路径与 artifact 写入
+3. 执行单文件发布流水线
+4. 给 `LAST` block 补 BTT id
+5. 给表格应用列宽和对齐启发式
+6. 把本地附件和图片适配成发布期资源
+7. 在 `BTT` 上打 Mermaid 和媒体补丁
 
 这一层的意义是把“命令编排”与“发布前 patch”拆开，避免所有发布适配都堆进 `command.ts` 或旧的单文件 transform。
 
@@ -240,12 +246,14 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 
 1. `src/cli/publish-md-to-lark.ts`
 2. `src/commands/publish-md/command.ts`
-3. `src/pipeline/markdown/md-to-hast.ts`
-4. `src/pipeline/hast-to-last.ts`
-5. `src/publish/last-normalize.ts`
-6. `src/interop/last-to-btt.ts`
-7. `src/lark/docx/render-btt.ts`
-8. `src/lark/docx/ops.ts`
+3. `src/publish/runtime.ts`
+4. `src/publish/process-file.ts`
+5. `src/pipeline/markdown/md-to-hast.ts`
+6. `src/pipeline/hast-to-last.ts`
+7. `src/publish/last-normalize.ts`
+8. `src/interop/last-to-btt.ts`
+9. `src/lark/docx/render-btt.ts`
+10. `src/lark/docx/ops.ts`
 
 ## 下一步阅读
 
