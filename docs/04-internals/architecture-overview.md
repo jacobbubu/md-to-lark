@@ -238,7 +238,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 5. Mermaid、附件、表格 patch 不对
    去 `src/publish/last-normalize.ts`、`src/publish/asset-adapter.ts`、`src/publish/btt-patch.ts`
 6. 飞书创建块、上传媒体或替换 token 失败
-   去 `src/lark/docx/ops.ts` 和 `src/lark/docx/render-btt.ts`
+   去 `src/lark/docx/ops.ts`、`src/lark/docx/render-btt.ts`、`src/lark/docx/render-post-process.ts`
 
 ## 源码入口
 
@@ -252,8 +252,10 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 6. `src/pipeline/hast-to-last.ts`
 7. `src/publish/last-normalize.ts`
 8. `src/interop/last-to-btt.ts`
-9. `src/lark/docx/render-btt.ts`
-10. `src/lark/docx/ops.ts`
+9. `src/lark/docx/render-payload.ts`
+10. `src/lark/docx/render-btt.ts`
+11. `src/lark/docx/render-post-process.ts`
+12. `src/lark/docx/ops.ts`
 
 ## 下一步阅读
 

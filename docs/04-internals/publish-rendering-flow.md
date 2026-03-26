@@ -262,7 +262,7 @@ dry-run 分支会：
 2. 资源 patch 不对
    看 `04-btt/btt.json`
 3. dry-run 正常，真实发布失败
-   看 `05-publish/result.json`、`render-btt.ts`、`ops.ts`
+   看 `05-publish/result.json`、`render-btt.ts`、`render-post-process.ts`、`ops.ts`
 4. 创建文档或清空文档异常
    看 `ops.ts`
 5. 某一类块写入失败
@@ -277,8 +277,10 @@ dry-run 分支会：
 3. `src/publish/process-file.ts`
 4. `src/publish/last-normalize.ts`
 5. `src/interop/last-to-btt.ts`
-6. `src/lark/docx/render-btt.ts`
-7. `src/lark/docx/ops.ts`
+6. `src/lark/docx/render-payload.ts`
+7. `src/lark/docx/render-btt.ts`
+8. `src/lark/docx/render-post-process.ts`
+9. `src/lark/docx/ops.ts`
 
 ## 下一步阅读
 
