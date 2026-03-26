@@ -17,11 +17,11 @@ import {
   type LarkRequestOptions,
 } from './ops.js';
 import type { BTTNode } from '../../btt/types.js';
-import type { MermaidPatch } from '../../commands/publish-md/pipeline-transform.js';
 import {
   DEFAULT_MERMAID_RENDER_CONFIG,
+  type MermaidPatch,
   type MermaidRenderConfig,
-} from '../../commands/publish-md/mermaid-render.js';
+} from './render-types.js';
 
 type TextualBlockTypeCode = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 17;
 type TextualPayloadKey =

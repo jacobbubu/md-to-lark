@@ -1,34 +1,11 @@
-export type MermaidRenderTarget = 'text-drawing' | 'board';
+import {
+  DEFAULT_MERMAID_RENDER_CONFIG,
+  type MermaidRenderTarget,
+  type MermaidRenderConfig,
+} from '../../lark/docx/render-types.js';
 
-export interface MermaidBoardRenderConfig {
-  /**
-   * Whiteboard parser type used by board.v1.whiteboardNode.createPlantuml.
-   * Runtime probe shows `2` works for Mermaid in current Feishu open API.
-   */
-  syntaxType?: number;
-  /**
-   * Optional board style variant passed through to createPlantuml.
-   */
-  styleType?: number;
-  /**
-   * Optional diagram subtype passed through to createPlantuml.
-   */
-  diagramType?: number;
-}
-
-export interface MermaidRenderConfig {
-  target: MermaidRenderTarget;
-  board: MermaidBoardRenderConfig;
-}
-
-export const DEFAULT_MERMAID_BOARD_SYNTAX_TYPE = 2;
-
-export const DEFAULT_MERMAID_RENDER_CONFIG: MermaidRenderConfig = {
-  target: 'text-drawing',
-  board: {
-    syntaxType: DEFAULT_MERMAID_BOARD_SYNTAX_TYPE,
-  },
-};
+export { DEFAULT_MERMAID_BOARD_SYNTAX_TYPE } from '../../lark/docx/render-types.js';
+export type { MermaidBoardRenderConfig, MermaidRenderConfig, MermaidRenderTarget } from '../../lark/docx/render-types.js';
 
 const TEXT_DRAWING_TARGET_ALIASES = new Set(['text-drawing', 'text_drawing', 'textdrawing', 'text']);
 const BOARD_TARGET_ALIASES = new Set(['board', 'whiteboard', 'canvas']);

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { getLarkBlockTypeName } from '../../lark/index.js';
+import { DEFAULT_MERMAID_RENDER_CONFIG, type MermaidPatch, type MermaidRenderConfig } from '../../lark/docx/render-types.js';
 import type { BTTDocument } from '../../btt/types.js';
 import type {
   LASTBlockNode,
@@ -10,17 +11,12 @@ import type {
   LASTTextualBlockType,
 } from '../../last/types.js';
 import { LAST_TEXTUAL_BLOCK_TYPE_SET } from '../../last/textual-block-types.js';
-import { DEFAULT_MERMAID_RENDER_CONFIG, type MermaidRenderConfig } from './mermaid-render.js';
 
 export interface LocalAsset {
   kind: 'image' | 'file';
   absolutePath: string;
   fileName: string;
   mediaKind?: 'image' | 'video' | 'audio' | 'file';
-}
-
-export interface MermaidPatch {
-  code: string;
 }
 
 const MERMAID_COMPONENT_TYPE_ID = 'blk_631fefbbae02400430b8f9f4';
