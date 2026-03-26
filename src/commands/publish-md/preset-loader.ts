@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { rewriteRelativeMediumAuthorLinks } from './presets/medium.js';
+import { formatChineseMarkdown } from './presets/zh-format.js';
 
 export interface MarkdownPresetContext {
   inputPath: string;
@@ -31,6 +32,19 @@ const BUILTIN_MARKDOWN_PRESETS: Readonly<
   medium: {
     transform: rewriteRelativeMediumAuthorLinks,
     aliases: ['medium', 'builtin:medium', 'preset:medium'],
+  },
+  'zh-format': {
+    transform: (markdown, context) => formatChineseMarkdown(markdown, context.inputPath),
+    aliases: [
+      'zh-format',
+      'zh-md-format',
+      'builtin:zh-format',
+      'preset:zh-format',
+      'zh-smart-quotes',
+      'cn-smart-quotes',
+      'builtin:zh-smart-quotes',
+      'preset:zh-smart-quotes',
+    ],
   },
 });
 

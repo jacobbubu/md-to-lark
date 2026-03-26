@@ -25,11 +25,14 @@ resolve input
 
 ## 编排入口
 
-当前主编排器是：
+当前命令入口和执行入口是：
 
 1. `src/commands/publish-md/command.ts`
+2. `src/publish/runtime.ts`
+3. `src/publish/process-file.ts`
+4. `src/publish/stage-cache.ts`
 
-它负责整条命令级流水线，不负责飞书底层请求细节。
+`command.ts` 只保留高层编排，不负责 stage 细节；真正的单文件执行和 artifact 写入已经收进 `src/publish/`。
 
 ## 第一步：解析输入集合
 
@@ -49,7 +52,7 @@ resolve input
 
 ## 第二步：装配运行时配置
 
-命令层会从 `options + env` 里解析出运行参数，例如：
+运行时构建层会从 `options + env` 里解析出运行参数，例如：
 
 1. 限流间隔
 2. 预处理开关
@@ -62,7 +65,7 @@ resolve input
 
 ## 第三步：为每个输入建立阶段目录
 
-每个 Markdown 文件都会分配一套独立的 stage cache 路径。
+`process-file.ts` 会为每个 Markdown 文件分配一套独立的 stage cache 路径，而路径计算和文件写入由 `stage-cache.ts` 统一处理。
 
 这一步会先写：
 
@@ -77,7 +80,7 @@ resolve input
 5. `btt.json`
 6. `result.json`
 
-所以即使是多文件目录模式，排查也始终能落到单文件维度。
+所以即使是多文件目录模式，排查也始终能落到单文件维度，而且每一类 artifact 都由同一个 stage-cache 层写出。
 
 ## 第四步：执行 preset
 
@@ -95,7 +98,7 @@ resolve input
 
 ## 第五步：执行预处理
 
-然后命令层调用：
+然后单文件执行器调用：
 
 1. `prepareMarkdownBeforePublish`
 
@@ -103,10 +106,10 @@ resolve input
 
 1. 下载远程 Markdown 图片
 2. 根据 frontmatter 规则做 `yt-dlp` URL 提取
-3. 生成 `download.log.json`
-4. 回写 `prepared.md`
+3. 返回结构化下载日志
+4. 由 stage-cache 回写 `download.log.json` 和 `prepared.md`
 
-执行完之后，命令层会打印一行 prepare 摘要，并把元数据写进：
+执行完之后，执行器会打印一行 prepare 摘要，并把元数据写进：
 
 1. `01-prepare/result.json`
 
@@ -132,7 +135,9 @@ resolve input
 
 这一步非常关键，主要在：
 
-1. `src/commands/publish-md/pipeline-transform.ts`
+1. `src/publish/last-normalize.ts`
+2. `src/publish/asset-adapter.ts`
+3. `src/publish/btt-patch.ts`
 
 当前会做的事情包括：
 
@@ -257,7 +262,7 @@ dry-run 分支会：
 2. 资源 patch 不对
    看 `04-btt/btt.json`
 3. dry-run 正常，真实发布失败
-   看 `05-publish/result.json`、`render-btt.ts`、`ops.ts`
+   看 `05-publish/result.json`、`render-btt.ts`、`render-table.ts`、`render-post-process.ts`、`ops.ts`
 4. 创建文档或清空文档异常
    看 `ops.ts`
 5. 某一类块写入失败
@@ -268,10 +273,15 @@ dry-run 分支会：
 最值得顺着读的是：
 
 1. `src/commands/publish-md/command.ts`
-2. `src/commands/publish-md/pipeline-transform.ts`
-3. `src/interop/last-to-btt.ts`
-4. `src/lark/docx/render-btt.ts`
-5. `src/lark/docx/ops.ts`
+2. `src/publish/runtime.ts`
+3. `src/publish/process-file.ts`
+4. `src/publish/last-normalize.ts`
+5. `src/interop/last-to-btt.ts`
+6. `src/lark/docx/render-payload.ts`
+7. `src/lark/docx/render-btt.ts`
+8. `src/lark/docx/render-table.ts`
+9. `src/lark/docx/render-post-process.ts`
+10. `src/lark/docx/ops.ts`
 
 ## 下一步阅读
 

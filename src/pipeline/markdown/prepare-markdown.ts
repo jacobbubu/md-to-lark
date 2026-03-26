@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { access, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -144,6 +144,37 @@ export interface PrepareMarkdownResult {
   assetsDir: string;
   logFilePath: string;
   logEntries: PrepareRemoteAssetLogEntry[];
+  logFileContent: PrepareMarkdownLogFile;
+}
+
+export interface PrepareMarkdownLogFile {
+  generatedAt: string;
+  sourcePath: string;
+  enabled: boolean;
+  retryPolicy?: {
+    maxRetries: number;
+    backoffBaseMs: number;
+    backoffMaxMs: number;
+    backoffJitterRatio: number;
+  };
+  ytDlp: {
+    enabled: boolean;
+    configuredInFrontmatter: boolean;
+    prefixes: string[];
+    executable: string | null;
+    cookiesPath: string | null;
+    timeoutMs: number;
+  };
+  remoteImageCount: number;
+  remoteYtDlpCount: number;
+  remoteFetchTotal: number;
+  rewrittenCount: number;
+  downloadedCount: number;
+  failedCount: number;
+  remoteFetchFailed: number;
+  ytDlpDownloadedCount: number;
+  ytDlpFailedCount: number;
+  entries: PrepareRemoteAssetLogEntry[];
 }
 
 function isRemoteHttpUrl(value: string): boolean {
@@ -987,8 +1018,6 @@ export async function prepareMarkdownBeforePublish(
   const ytDlpPath = options.ytDlpPath?.trim();
   const ytDlpCookiesPath = options.ytDlpCookiesPath?.trim();
 
-  await mkdir(prepareDir, { recursive: true });
-
   const remoteImageMatches = collectImageTagMatches(sourceContent).filter((item) => isRemoteHttpUrl(item.originalUrl));
   const ytDlpFrontmatterConfig = readYtDlpPrefixesFromFrontmatter(sourceContent);
   const ytDlpConfigured = ytDlpFrontmatterConfig.configured && ytDlpFrontmatterConfig.rules.length > 0;
@@ -1006,6 +1035,29 @@ export async function prepareMarkdownBeforePublish(
   };
 
   if (remoteImageMatches.length === 0 && ytDlpLineMatches.length === 0) {
+    const logFileContent: PrepareMarkdownLogFile = {
+      generatedAt: new Date().toISOString(),
+      sourcePath: absoluteSourcePath,
+      enabled: options.enabled,
+      ytDlp: {
+        enabled: canRunYtDlp,
+        configuredInFrontmatter: ytDlpFrontmatterConfig.configured,
+        prefixes: ytDlpFrontmatterConfig.prefixes,
+        executable: ytDlpPath ?? null,
+        cookiesPath: ytDlpCookiesPath ?? null,
+        timeoutMs: ytDlpTimeoutMs,
+      },
+      remoteImageCount: 0,
+      remoteYtDlpCount: 0,
+      remoteFetchTotal: 0,
+      rewrittenCount: 0,
+      downloadedCount: 0,
+      failedCount: 0,
+      remoteFetchFailed: 0,
+      ytDlpDownloadedCount: 0,
+      ytDlpFailedCount: 0,
+      entries: [],
+    };
     const result: PrepareMarkdownResult = {
       sourcePath: absoluteSourcePath,
       preparedContent: sourceContent,
@@ -1023,38 +1075,8 @@ export async function prepareMarkdownBeforePublish(
       assetsDir,
       logFilePath,
       logEntries,
+      logFileContent,
     };
-    await writeFile(
-      logFilePath,
-      `${JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          sourcePath: absoluteSourcePath,
-          enabled: options.enabled,
-          ytDlp: {
-            enabled: canRunYtDlp,
-            configuredInFrontmatter: ytDlpFrontmatterConfig.configured,
-            prefixes: ytDlpFrontmatterConfig.prefixes,
-            executable: ytDlpPath ?? null,
-            cookiesPath: ytDlpCookiesPath ?? null,
-            timeoutMs: ytDlpTimeoutMs,
-          },
-          remoteImageCount: 0,
-          remoteYtDlpCount: 0,
-          remoteFetchTotal: 0,
-          rewrittenCount: 0,
-          downloadedCount: 0,
-          failedCount: 0,
-          remoteFetchFailed: 0,
-          ytDlpDownloadedCount: 0,
-          ytDlpFailedCount: 0,
-          entries: [],
-        },
-        null,
-        2,
-      )}\n`,
-      'utf8',
-    );
     return result;
   }
 
@@ -1234,44 +1256,35 @@ export async function prepareMarkdownBeforePublish(
   const downloadedCount = imageDownloadedCount + ytDlpDownloadedCount;
   const failedCount = imageFailedCount + ytDlpFailedCount;
   const rewrittenCount = replacements.length;
-
-  await writeFile(
-    logFilePath,
-    `${JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        sourcePath: absoluteSourcePath,
-        enabled: options.enabled,
-        retryPolicy: {
-          maxRetries,
-          backoffBaseMs,
-          backoffMaxMs,
-          backoffJitterRatio,
-        },
-        ytDlp: {
-          enabled: canRunYtDlp,
-          configuredInFrontmatter: ytDlpFrontmatterConfig.configured,
-          prefixes: ytDlpFrontmatterConfig.prefixes,
-          executable: ytDlpPath ?? null,
-          cookiesPath: ytDlpCookiesPath ?? null,
-          timeoutMs: ytDlpTimeoutMs,
-        },
-        remoteImageCount,
-        remoteYtDlpCount,
-        remoteFetchTotal,
-        rewrittenCount,
-        downloadedCount,
-        failedCount,
-        remoteFetchFailed: failedCount,
-        ytDlpDownloadedCount,
-        ytDlpFailedCount,
-        entries: logEntries,
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
+  const logFileContent: PrepareMarkdownLogFile = {
+    generatedAt: new Date().toISOString(),
+    sourcePath: absoluteSourcePath,
+    enabled: options.enabled,
+    retryPolicy: {
+      maxRetries,
+      backoffBaseMs,
+      backoffMaxMs,
+      backoffJitterRatio,
+    },
+    ytDlp: {
+      enabled: canRunYtDlp,
+      configuredInFrontmatter: ytDlpFrontmatterConfig.configured,
+      prefixes: ytDlpFrontmatterConfig.prefixes,
+      executable: ytDlpPath ?? null,
+      cookiesPath: ytDlpCookiesPath ?? null,
+      timeoutMs: ytDlpTimeoutMs,
+    },
+    remoteImageCount,
+    remoteYtDlpCount,
+    remoteFetchTotal,
+    rewrittenCount,
+    downloadedCount,
+    failedCount,
+    remoteFetchFailed: failedCount,
+    ytDlpDownloadedCount,
+    ytDlpFailedCount,
+    entries: logEntries,
+  };
 
   return {
     sourcePath: absoluteSourcePath,
@@ -1290,5 +1303,6 @@ export async function prepareMarkdownBeforePublish(
     assetsDir,
     logFilePath,
     logEntries,
+    logFileContent,
   };
 }

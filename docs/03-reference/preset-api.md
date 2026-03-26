@@ -134,17 +134,29 @@ export const preset = {
 
 ## 内置 preset
 
-当前唯一内置 preset 是：
+当前内置 preset 有：
 
 1. `medium`
+2. `zh-format`
 
 可用别名：
 
 1. `medium`
 2. `builtin:medium`
 3. `preset:medium`
+4. `zh-format`
+5. `zh-md-format`
+6. `builtin:zh-format`
+7. `preset:zh-format`
+8. `zh-smart-quotes`
+9. `cn-smart-quotes`
+10. `builtin:zh-smart-quotes`
+11. `preset:zh-smart-quotes`
 
-它的作用是把 Medium 作者页相对链接改写成绝对链接。
+它们的作用分别是：
+
+1. `medium`：把 Medium 作者页相对链接改写成绝对链接。
+2. `zh-format`：调用 `@jacobbubu/md-zh-format` 做中文 Markdown 格式化，包含中英文混排、数字/单位间距和中文引号规范化；旧的 `zh-smart-quotes` / `cn-smart-quotes` 作为兼容别名继续可用。
 
 ## 加载行为
 

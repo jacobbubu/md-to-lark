@@ -37,12 +37,16 @@
 
 ## 一个真实例子
 
-仓库内置了一个 `medium` preset，用来把 Medium 作者页的相对链接改写成完整链接。
+仓库当前内置了两类 preset：
+
+1. `medium`：把 Medium 作者页的相对链接改写成完整链接。
+2. `zh-format`：用 `@jacobbubu/md-zh-format` 做中文 Markdown 格式化。
 
 使用方式：
 
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
+npm run publish:md -- --input ./translated/article-zh.md --dry-run --preset zh-format
 ```
 
 当前支持的内置别名是：
@@ -50,6 +54,21 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
 1. `medium`
 2. `builtin:medium`
 3. `preset:medium`
+4. `zh-format`
+5. `zh-md-format`
+6. `builtin:zh-format`
+7. `preset:zh-format`
+8. `zh-smart-quotes`
+9. `cn-smart-quotes`
+10. `builtin:zh-smart-quotes`
+11. `preset:zh-smart-quotes`
+
+`zh-format` 的行为比旧的引号规则更完整：
+
+1. 会做中英文混排和数字/单位间距规范化。
+2. 会做中文语境引号规范化。
+3. 默认保留 frontmatter。
+4. 不改代码块、行内代码、链接目标、图片目标、URL 和其他 Markdown 敏感片段。
 
 ## 本地 preset 模块怎么写
 
