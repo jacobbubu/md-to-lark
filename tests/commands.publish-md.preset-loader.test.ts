@@ -15,7 +15,7 @@ test('loadMarkdownPreset returns null for empty preset path', async () => {
 });
 
 test('listBuiltinMarkdownPresetNames contains current built-ins', () => {
-  assert.deepEqual(listBuiltinMarkdownPresetNames(), ['medium', 'zh-smart-quotes']);
+  assert.deepEqual(listBuiltinMarkdownPresetNames(), ['medium', 'zh-format']);
 });
 
 test('loadMarkdownPreset resolves built-in medium preset name', async () => {
@@ -42,11 +42,11 @@ test('loadMarkdownPreset resolves built-in medium preset aliases', async () => {
   assert.equal(b.sourcePath, 'builtin:medium');
 });
 
-test('loadMarkdownPreset resolves built-in zh-smart-quotes preset name', async () => {
-  const preset = await loadMarkdownPreset('zh-smart-quotes');
+test('loadMarkdownPreset resolves built-in zh-format preset name', async () => {
+  const preset = await loadMarkdownPreset('zh-format');
   assert.ok(preset);
-  assert.equal(preset.sourcePath, 'builtin:zh-smart-quotes');
-  assert.equal(preset.displayPath, 'builtin:zh-smart-quotes');
+  assert.equal(preset.sourcePath, 'builtin:zh-format');
+  assert.equal(preset.displayPath, 'builtin:zh-format');
   const next = await preset.transform(
     [
       '---',
@@ -54,7 +54,9 @@ test('loadMarkdownPreset resolves built-in zh-smart-quotes preset name', async (
       'title_cn: "2026 年，Agent Harness 为什么重要"',
       '---',
       '',
-      'Harness 将成为解决"模型漂移"的主要工具。',
+      'Harness将成为解决"模型漂移"的主要工具。',
+      '',
+      '在Azure中部署3台VM。',
       '',
       '`const label = "模型漂移"`',
       '',
@@ -75,21 +77,25 @@ test('loadMarkdownPreset resolves built-in zh-smart-quotes preset name', async (
   );
   assert.match(next, /title_cn: "2026 年，Agent Harness 为什么重要"/);
   assert.match(next, /Harness 将成为解决“模型漂移”的主要工具。/);
+  assert.match(next, /在 Azure 中部署 3 台 VM。/);
   assert.match(next, /`const label = "模型漂移"`/);
   assert.match(next, /\[示例\]\(https:\/\/example\.com "中文标题"\)/);
   assert.match(next, /const title = "模型漂移";/);
 });
 
-test('loadMarkdownPreset resolves built-in zh-smart-quotes aliases', async () => {
-  const a = await loadMarkdownPreset('builtin:zh-smart-quotes');
-  const b = await loadMarkdownPreset('preset:zh-smart-quotes');
+test('loadMarkdownPreset resolves built-in zh-format aliases', async () => {
+  const a = await loadMarkdownPreset('builtin:zh-format');
+  const b = await loadMarkdownPreset('preset:zh-format');
   const c = await loadMarkdownPreset('cn-smart-quotes');
+  const d = await loadMarkdownPreset('zh-smart-quotes');
   assert.ok(a);
   assert.ok(b);
   assert.ok(c);
-  assert.equal(a.sourcePath, 'builtin:zh-smart-quotes');
-  assert.equal(b.sourcePath, 'builtin:zh-smart-quotes');
-  assert.equal(c.sourcePath, 'builtin:zh-smart-quotes');
+  assert.ok(d);
+  assert.equal(a.sourcePath, 'builtin:zh-format');
+  assert.equal(b.sourcePath, 'builtin:zh-format');
+  assert.equal(c.sourcePath, 'builtin:zh-format');
+  assert.equal(d.sourcePath, 'builtin:zh-format');
 });
 
 test('loadMarkdownPreset loads default function export', async (t) => {

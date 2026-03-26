@@ -137,22 +137,26 @@ export const preset = {
 当前内置 preset 有：
 
 1. `medium`
-2. `zh-smart-quotes`
+2. `zh-format`
 
 可用别名：
 
 1. `medium`
 2. `builtin:medium`
 3. `preset:medium`
-4. `zh-smart-quotes`
-5. `cn-smart-quotes`
-6. `builtin:zh-smart-quotes`
-7. `preset:zh-smart-quotes`
+4. `zh-format`
+5. `zh-md-format`
+6. `builtin:zh-format`
+7. `preset:zh-format`
+8. `zh-smart-quotes`
+9. `cn-smart-quotes`
+10. `builtin:zh-smart-quotes`
+11. `preset:zh-smart-quotes`
 
 它们的作用分别是：
 
 1. `medium`：把 Medium 作者页相对链接改写成绝对链接。
-2. `zh-smart-quotes`：把中文语境正文中的半角双引号改写成 `“”`，同时避免误改 frontmatter、代码块、行内代码和链接目标。
+2. `zh-format`：调用 `@jacobbubu/md-zh-format` 做中文 Markdown 格式化，包含中英文混排、数字/单位间距和中文引号规范化；旧的 `zh-smart-quotes` / `cn-smart-quotes` 作为兼容别名继续可用。
 
 ## 加载行为
 

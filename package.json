@@ -29,6 +29,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "@jacobbubu/md-zh-format": "^1.0.1",
     "dotenv": "^17.2.2",
     "hast-util-to-string": "^3.0.1",
     "rehype-parse": "^9.0.1",

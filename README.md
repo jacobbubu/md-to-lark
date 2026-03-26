@@ -50,7 +50,7 @@ npm run publish:md -- --input ./test-md/comp/comp.md --no-date-prefix
 
 # 预处理 / 渲染控制
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
-npm run publish:md -- --input ./translated/article-zh.md --preset zh-smart-quotes --dry-run
+npm run publish:md -- --input ./translated/article-zh.md --preset zh-format --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
 

@@ -218,7 +218,7 @@ test('publishMdToLark dry-run accepts built-in preset name', async (t) => {
   assert.ok(logs.some((line) => /\[dry-run 1\/1\] title: \d{8}-Builtin Preset/.test(line)));
 });
 
-test('publishMdToLark dry-run applies built-in zh-smart-quotes preset', async (t) => {
+test('publishMdToLark dry-run applies built-in zh-format preset', async (t) => {
   const dir = await createTempDir();
   t.after(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -226,7 +226,7 @@ test('publishMdToLark dry-run applies built-in zh-smart-quotes preset', async (t
 
   const file = path.join(dir, 'single.md');
   const cacheRoot = path.join(dir, 'cache');
-  await writeFile(file, '# 中文引号\n\nHarness 将成为解决"模型漂移"的主要工具。', 'utf8');
+  await writeFile(file, '# 中文格式化\n\nHarness将成为解决"模型漂移"的主要工具。在Azure中部署3台VM。', 'utf8');
 
   const { logs } = await withCapturedConsole(async () => {
     await publishMdToLark(
@@ -235,7 +235,7 @@ test('publishMdToLark dry-run applies built-in zh-smart-quotes preset', async (t
         folderToken: 'fld_dry_run',
         pipelineCacheDir: cacheRoot,
         dryRun: true,
-        presetPath: 'zh-smart-quotes',
+        presetPath: 'zh-format',
       },
       baseEnv,
     );
@@ -249,6 +249,7 @@ test('publishMdToLark dry-run applies built-in zh-smart-quotes preset', async (t
   const stageRoot = perFileCache[0]!;
   const sourcePreset = await readFile(path.join(stageRoot, '00-source', 'preset.md'), 'utf8');
 
-  assert.ok(logs.some((line) => line.includes('Preset: builtin:zh-smart-quotes')));
+  assert.ok(logs.some((line) => line.includes('Preset: builtin:zh-format')));
   assert.match(sourcePreset, /Harness 将成为解决“模型漂移”的主要工具。/);
+  assert.match(sourcePreset, /在 Azure 中部署 3 台 VM。/);
 });
