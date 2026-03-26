@@ -14,7 +14,7 @@ import {
   collectMermaidPatches,
   ensureLastBlockBttIds,
   patchBTTForMermaidAndAssets,
-} from './pipeline-transform.js';
+} from '../../publish/index.js';
 import {
   clearDocumentContent,
   createDocument,

@@ -132,7 +132,9 @@ resolve input
 
 这一步非常关键，主要在：
 
-1. `src/commands/publish-md/pipeline-transform.ts`
+1. `src/publish/last-normalize.ts`
+2. `src/publish/asset-adapter.ts`
+3. `src/publish/btt-patch.ts`
 
 当前会做的事情包括：
 
@@ -268,7 +270,7 @@ dry-run 分支会：
 最值得顺着读的是：
 
 1. `src/commands/publish-md/command.ts`
-2. `src/commands/publish-md/pipeline-transform.ts`
+2. `src/publish/last-normalize.ts`
 3. `src/interop/last-to-btt.ts`
 4. `src/lark/docx/render-btt.ts`
 5. `src/lark/docx/ops.ts`

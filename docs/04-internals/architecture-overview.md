@@ -56,8 +56,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 2. `src/commands/publish-md/args.ts`
 3. `src/commands/publish-md/input-resolver.ts`
 4. `src/commands/publish-md/title-policy.ts`
-5. `src/commands/publish-md/pipeline-transform.ts`
-6. `src/commands/publish-md/preset-loader.ts`
+5. `src/commands/publish-md/preset-loader.ts`
 
 这一层负责：
 
@@ -84,6 +83,26 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 3. 把 HAST 转成项目内部语义模型 `LAST`
 
 这层仍然是“内容理解与结构转换”，还没有进入飞书 API 语义。
+
+### `src/publish/`
+
+这是发布前适配层，专门放“还没真正发请求，但已经开始面向目标平台收口”的逻辑。
+
+当前主文件是：
+
+1. `src/publish/last-normalize.ts`
+2. `src/publish/asset-adapter.ts`
+3. `src/publish/btt-patch.ts`
+4. `src/publish/ids.ts`
+
+这里负责：
+
+1. 给 `LAST` block 补 BTT id
+2. 给表格应用列宽和对齐启发式
+3. 把本地附件和图片适配成发布期资源
+4. 在 `BTT` 上打 Mermaid 和媒体补丁
+
+这一层的意义是把“命令编排”与“发布前 patch”拆开，避免所有发布适配都堆进 `command.ts` 或旧的单文件 transform。
 
 ### `src/last/`
 
@@ -180,7 +199,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 2. 表格列宽和数字列对齐更像发布期启发式，而不是原始 Markdown 语义
 3. 本地附件既涉及语义替换，也涉及真实发布时的媒体上传
 
-所以当前实现把它们放在 `pipeline-transform` 和 `render-btt` 这两段里处理，而不是强行挤进最前面的 Markdown 解析。
+所以当前实现把它们放在 `src/publish/` 和 `render-btt` 这两段里处理，而不是强行挤进最前面的 Markdown 解析。
 
 ## dry-run 为什么能作为调试主入口
 
@@ -211,7 +230,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 4. 内部语义结构不符合预期
    去 `src/last/` 和 `src/interop/`
 5. Mermaid、附件、表格 patch 不对
-   去 `src/commands/publish-md/pipeline-transform.ts`
+   去 `src/publish/last-normalize.ts`、`src/publish/asset-adapter.ts`、`src/publish/btt-patch.ts`
 6. 飞书创建块、上传媒体或替换 token 失败
    去 `src/lark/docx/ops.ts` 和 `src/lark/docx/render-btt.ts`
 
@@ -223,7 +242,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 2. `src/commands/publish-md/command.ts`
 3. `src/pipeline/markdown/md-to-hast.ts`
 4. `src/pipeline/hast-to-last.ts`
-5. `src/commands/publish-md/pipeline-transform.ts`
+5. `src/publish/last-normalize.ts`
 6. `src/interop/last-to-btt.ts`
 7. `src/lark/docx/render-btt.ts`
 8. `src/lark/docx/ops.ts`
