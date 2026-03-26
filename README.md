@@ -4,6 +4,17 @@
 
 它不是只做一次性渲染的脚本，而是一条可重复执行的发布链路：输入预处理、标题策略、资源识别与上传、Mermaid、表格增强、dry-run、以及可追溯的阶段产物都在同一条流水线里完成。
 
+## 仓库与包名
+
+- GitHub 仓库：[jacobbubu/md-to-lark](https://github.com/jacobbubu/md-to-lark)
+- 当前 npm 包元信息已配置为 `@jacobbubu/md-to-lark`
+- 依赖 `@jacobbubu/md-zh-format` 保持不变
+
+说明：
+
+- README 里的命令仍以仓库内开发和验证为主。
+- 等正式发布到 npm 之后，再按 `@jacobbubu/md-to-lark` 对外安装。
+
 ## 适合什么场景
 
 - 把单个 Markdown 文件发布到飞书文档
