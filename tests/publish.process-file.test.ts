@@ -18,13 +18,16 @@ async function createTempDir(): Promise<string> {
 
 async function withSilencedConsole<T>(fn: () => Promise<T>): Promise<T> {
   const originalLog = console.log;
+  const originalError = console.error;
   const originalWarn = console.warn;
   console.log = () => {};
+  console.error = () => {};
   console.warn = () => {};
   try {
     return await fn();
   } finally {
     console.log = originalLog;
+    console.error = originalError;
     console.warn = originalWarn;
   }
 }
@@ -62,11 +65,13 @@ test('processSingleMarkdownFile builds dry-run stage artifacts directly', async 
 
   assert.equal(result.status, 'dry-run');
   assert.equal(result.documentId, null);
+  assert.equal(result.documentUrl, null);
   assert.match(result.title, /^\d{8}-Process File Title$/);
 
   const publishResultText = await readFile(path.join(result.stagePaths.publishDir, 'result.json'), 'utf8');
   const prepareLogText = await readFile(path.join(result.stagePaths.prepareDir, 'download.log.json'), 'utf8');
 
   assert.match(publishResultText, /"status": "dry-run"/);
+  assert.match(publishResultText, /"documentUrl": null/);
   assert.match(prepareLogText, /"generatedAt":/);
 });

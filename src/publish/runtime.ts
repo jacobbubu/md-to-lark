@@ -6,7 +6,7 @@ import {
   normalizeMermaidRenderTarget,
 } from '../commands/publish-md/mermaid-render.js';
 import type { LoadedMarkdownPreset } from '../commands/publish-md/preset-loader.js';
-import { createLarkClientConfigFromEnv } from '../lark/index.js';
+import { buildLarkDocumentUrl, createLarkClientConfigFromEnv } from '../lark/index.js';
 import type { LarkRequestOptions } from '../lark/docx/ops.js';
 import type { MermaidRenderConfig } from '../lark/docx/render-types.js';
 import type { PrepareMarkdownOptions } from '../pipeline/markdown/prepare-markdown.js';
@@ -61,6 +61,7 @@ export interface PublishPrepareRuntimeConfig extends Omit<PrepareMarkdownOptions
 export interface PublishRuntime {
   env: NodeJS.ProcessEnv;
   markdownPreset: LoadedMarkdownPreset | null;
+  documentUrlFor: (documentId: string) => string;
   authOptions: LarkRequestOptions;
   sdkClient: lark.Client;
   docxLimiter: RateLimiter;
@@ -132,6 +133,7 @@ export function buildPublishRuntime(
   return {
     env,
     markdownPreset,
+    documentUrlFor: (documentId: string) => buildLarkDocumentUrl(config.baseUrl, documentId),
     authOptions,
     sdkClient,
     docxLimiter: new RateLimiter(docxLimiterIntervalMs),
@@ -163,14 +165,14 @@ export function logPublishRuntimeSummary(
   inputCount: number,
   inputMode: 'single' | 'directory',
 ): void {
-  console.log(`Resolved markdown files: ${inputCount} (${inputMode === 'single' ? 'single' : 'directory'})`);
-  console.log(
+  console.error(`Resolved markdown files: ${inputCount} (${inputMode === 'single' ? 'single' : 'directory'})`);
+  console.error(
     `Rate limits: docx=${runtime.docxLimiterIntervalMs}ms media=${runtime.mediaLimiterIntervalMs}ms cooldown=${runtime.publishCooldownMs}ms`,
   );
-  console.log(
+  console.error(
     `Prepare: download_remote_images=${String(runtime.downloadRemoteImages)} yt_dlp=${runtime.ytDlpPath ? 'enabled' : 'disabled'}`,
   );
-  console.log(
+  console.error(
     runtime.mermaidRenderConfig.target === 'board'
       ? `Mermaid: target=board syntax_type=${String(runtime.mermaidRenderConfig.board.syntaxType)} style_type=${String(
           runtime.mermaidRenderConfig.board.styleType ?? '(default)',
@@ -178,6 +180,6 @@ export function logPublishRuntimeSummary(
       : 'Mermaid: target=text-drawing',
   );
   if (runtime.markdownPreset) {
-    console.log(`Preset: ${runtime.markdownPreset.displayPath}`);
+    console.error(`Preset: ${runtime.markdownPreset.displayPath}`);
   }
 }

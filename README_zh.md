@@ -65,6 +65,15 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md
 ```
 
+CLI 成功执行后会在 stdout 打印一个 JSON 数组，每项都包含：
+
+- `documentId`
+- `title`
+- `status`
+- `documentUrl`
+
+进度日志和异常信息统一写到 stderr。
+
 ## 常用命令
 
 基础发布：

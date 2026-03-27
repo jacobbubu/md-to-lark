@@ -15,6 +15,11 @@ npm run publish:md -- --input <file.md|dir>
 3. 生效范围
 4. 限制条件
 
+当前 CLI 的 I/O 契约也固定了：
+
+1. 成功结果写到 stdout
+2. 进度日志和异常写到 stderr
+
 它不是一篇入门教程。第一次使用建议先看：
 
 1. `docs/01-getting-started/quickstart.md`
@@ -39,6 +44,31 @@ npm run publish:md -- --input <file.md|dir> \
   [--dry-run] \
   [--help|-h]
 ```
+
+## 标准输出与标准错误
+
+成功时，stdout 会输出一个 JSON 数组。
+
+数组每一项都包含：
+
+1. `documentId`
+2. `title`
+3. `status`
+4. `documentUrl`
+
+说明：
+
+1. 单文件模式也是数组，只是长度为 `1`
+2. `dry-run` 时 `documentId` 和 `documentUrl` 都是 `null`
+3. 目录模式下会按处理顺序输出多项结果
+
+stderr 负责：
+
+1. 输入解析摘要
+2. preset 日志
+3. 预处理统计
+4. dry-run 观察信息
+5. 发布进度和错误信息
 
 ## 必需项
 

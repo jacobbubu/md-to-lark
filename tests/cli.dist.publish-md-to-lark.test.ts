@@ -140,7 +140,17 @@ test('dist CLI dry-run can load a local preset module', async (t) => {
   );
 
   assert.equal(result.code, 0, `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
-  assert.match(result.stdout, /Preset:/);
-  assert.match(result.stdout, /\[dry-run 1\/1\] title: \d{8}-After/);
-  assert.equal(result.stderr.trim(), '');
+  const payload = JSON.parse(result.stdout) as Array<{
+    documentId: string | null;
+    documentUrl: string | null;
+    status: string;
+    title: string;
+  }>;
+  assert.equal(payload.length, 1);
+  assert.equal(payload[0]?.documentId, null);
+  assert.equal(payload[0]?.documentUrl, null);
+  assert.equal(payload[0]?.status, 'dry-run');
+  assert.match(payload[0]?.title ?? '', /^\d{8}-After$/);
+  assert.match(result.stderr, /Preset:/);
+  assert.match(result.stderr, /\[dry-run 1\/1\] title: \d{8}-After/);
 });

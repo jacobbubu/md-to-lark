@@ -19,15 +19,19 @@ const baseEnv: NodeJS.ProcessEnv = {
 
 async function withCapturedConsole<T>(fn: () => Promise<T> | T): Promise<{ result: T; logs: string[] }> {
   const originalLog = console.log;
+  const originalError = console.error;
   const logs: string[] = [];
-  console.log = (...args: unknown[]) => {
+  const capture = (...args: unknown[]) => {
     logs.push(args.map((arg) => String(arg)).join(' '));
   };
+  console.log = capture;
+  console.error = capture;
   try {
     const result = await fn();
     return { result, logs };
   } finally {
     console.log = originalLog;
+    console.error = originalError;
   }
 }
 
@@ -78,6 +82,7 @@ test('buildPublishRuntime derives env and option defaults into normalized runtim
   assert.equal(runtime.prepareConfig.backoffJitterRatio, 0.4);
   assert.equal(runtime.prepareConfig.ytDlpTimeoutMs, 1000);
   assert.equal(runtime.prepareConfig.ytDlpPath, '/tmp/bin/yt-dlp');
+  assert.equal(runtime.documentUrlFor('doccn_demo'), 'https://feishu.cn/docx/doccn_demo');
 });
 
 test('logPublishRuntimeSummary prints resolved runtime and preset lines', async () => {

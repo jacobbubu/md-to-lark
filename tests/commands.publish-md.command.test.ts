@@ -17,24 +17,30 @@ async function createTempDir(): Promise<string> {
 
 async function withSilencedConsole<T>(fn: () => Promise<T>): Promise<T> {
   const originalLog = console.log;
+  const originalError = console.error;
   const originalWarn = console.warn;
   console.log = () => {};
+  console.error = () => {};
   console.warn = () => {};
   try {
     return await fn();
   } finally {
     console.log = originalLog;
+    console.error = originalError;
     console.warn = originalWarn;
   }
 }
 
 async function withCapturedConsole<T>(fn: () => Promise<T>): Promise<{ result: T; logs: string[] }> {
   const originalLog = console.log;
+  const originalError = console.error;
   const originalWarn = console.warn;
   const logs: string[] = [];
-  console.log = (...args: unknown[]) => {
+  const capture = (...args: unknown[]) => {
     logs.push(args.map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg))).join(' '));
   };
+  console.log = capture;
+  console.error = capture;
   console.warn = (...args: unknown[]) => {
     logs.push(args.map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg))).join(' '));
   };
@@ -43,6 +49,7 @@ async function withCapturedConsole<T>(fn: () => Promise<T>): Promise<{ result: T
     return { result, logs };
   } finally {
     console.log = originalLog;
+    console.error = originalError;
     console.warn = originalWarn;
   }
 }
@@ -57,8 +64,8 @@ test('publishMdToLark dry-run succeeds for single markdown file', async (t) => {
   const cacheRoot = path.join(dir, 'cache');
   await writeFile(file, '# Dry Run Title\n\ncontent', 'utf8');
 
-  await withSilencedConsole(async () => {
-    await publishMdToLark(
+  const results = await withSilencedConsole(async () => {
+    return publishMdToLark(
       {
         inputPath: file,
         folderToken: 'fld_dry_run',
@@ -68,6 +75,11 @@ test('publishMdToLark dry-run succeeds for single markdown file', async (t) => {
       baseEnv,
     );
   });
+  assert.equal(results.length, 1);
+  assert.equal(results[0]?.documentId, null);
+  assert.equal(results[0]?.documentUrl, null);
+  assert.equal(results[0]?.status, 'dry-run');
+  assert.match(results[0]?.title ?? '', /^\d{8}-Dry Run Title$/);
 
   const cacheEntries = await readdir(cacheRoot, { withFileTypes: true });
   const perFileCache = cacheEntries
@@ -89,9 +101,15 @@ test('publishMdToLark dry-run succeeds for single markdown file', async (t) => {
   assert.match(downloadLog, /"generatedAt":/);
 
   const publishResultText = await readFile(path.join(stageRoot, '05-publish', 'result.json'), 'utf8');
-  const publishResult = JSON.parse(publishResultText) as { status: string; title: string; documentId: string | null };
+  const publishResult = JSON.parse(publishResultText) as {
+    status: string;
+    title: string;
+    documentId: string | null;
+    documentUrl: string | null;
+  };
   assert.equal(publishResult.status, 'dry-run');
   assert.equal(publishResult.documentId, null);
+  assert.equal(publishResult.documentUrl, null);
   assert.match(publishResult.title, /^\d{8}-Dry Run Title$/);
 });
 
@@ -109,8 +127,8 @@ test('publishMdToLark dry-run succeeds for directory input with multiple markdow
     writeFile(path.join(nested, 'skip.txt'), 'skip', 'utf8'),
   ]);
 
-  await withSilencedConsole(async () => {
-    await publishMdToLark(
+  const results = await withSilencedConsole(async () => {
+    return publishMdToLark(
       {
         inputPath: dir,
         folderToken: 'fld_dry_run',
@@ -126,6 +144,15 @@ test('publishMdToLark dry-run succeeds for directory input with multiple markdow
       },
     );
   });
+  assert.equal(results.length, 2);
+  assert.deepEqual(
+    results.map((result) => result.status),
+    ['dry-run', 'dry-run'],
+  );
+  assert.deepEqual(
+    results.map((result) => result.documentUrl),
+    [null, null],
+  );
 });
 
 test('publishMdToLark rejects documentId when input resolves to directory mode', async (t) => {
