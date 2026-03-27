@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/jacobbubu/md-to-lark/compare/v1.1.0...v1.2.0) (2026-03-27)
+
+
+### Features
+
+* support document base url config ([#24](https://github.com/jacobbubu/md-to-lark/issues/24)) ([b578de6](https://github.com/jacobbubu/md-to-lark/commit/b578de603a8367fd39b4ea582636bf37855930da))
+
 # [1.1.0](https://github.com/jacobbubu/md-to-lark/compare/v1.0.0...v1.1.0) (2026-03-27)
 
 
