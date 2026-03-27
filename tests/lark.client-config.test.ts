@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createLarkClientConfigFromEnv } from '../src/lark/client.js';
+import {
+  buildLarkDocumentUrl,
+  createLarkClientConfigFromEnv,
+  deriveLarkDocumentBaseUrl,
+  normalizeLarkDocumentBaseUrl,
+} from '../src/lark/client.js';
 
 test('createLarkClientConfigFromEnv parses tenant config and trims values', () => {
   const config = createLarkClientConfigFromEnv({
@@ -52,4 +57,12 @@ test('createLarkClientConfigFromEnv requires app id and secret', () => {
       }),
     /LARK_APP_SECRET is required\./,
   );
+});
+
+test('document url helpers normalize explicit base and derive fallback base', () => {
+  assert.equal(normalizeLarkDocumentBaseUrl('https://li.feishu.cn/'), 'https://li.feishu.cn');
+  assert.equal(normalizeLarkDocumentBaseUrl('https://li.feishu.cn/docx/'), 'https://li.feishu.cn');
+  assert.equal(deriveLarkDocumentBaseUrl('https://open.feishu.cn'), 'https://feishu.cn');
+  assert.equal(deriveLarkDocumentBaseUrl('https://open.larksuite.com'), 'https://larksuite.com');
+  assert.equal(buildLarkDocumentUrl('https://li.feishu.cn/', 'doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
 });

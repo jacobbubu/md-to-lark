@@ -77,6 +77,27 @@
 
 通常你不需要改它，除非你明确要切到别的 Open API 域。
 
+### `LARK_DOCUMENT_BASE_URL`
+
+用于生成发布结果里的 `documentUrl`。
+
+推荐填写文档访问域，例如：
+
+1. `https://li.feishu.cn`
+2. `https://feishu.cn`
+3. `https://larksuite.com`
+
+优先级：
+
+1. 会被命令行 `--document-base-url` 覆盖
+2. 如果没有显式配置，才会回退到当前兼容推导逻辑
+
+注意：
+
+1. 它和 `LARK_BASE_URL` 不是一回事
+2. `LARK_BASE_URL` 管 Open API
+3. `LARK_DOCUMENT_BASE_URL` 管结果里的文档访问链接
+
 ## 标题相关变量
 
 ### `LARK_TITLE_DATE_PREFIX`

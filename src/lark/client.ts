@@ -4,6 +4,10 @@ function trimSlashSuffix(input: string): string {
   return input.endsWith('/') ? input.slice(0, -1) : input;
 }
 
+function trimDocxSuffix(input: string): string {
+  return input.endsWith('/docx') ? input.slice(0, -5) : input;
+}
+
 function assertNonEmpty(value: string, name: string): void {
   if (!value) {
     throw new Error(`${name} is required.`);
@@ -50,7 +54,18 @@ function buildDocumentOrigin(baseUrl: string): string {
   return `${resolved.protocol}//${hostname}`;
 }
 
+export function normalizeLarkDocumentBaseUrl(baseUrl: string): string {
+  const trimmed = trimDocxSuffix(trimSlashSuffix(baseUrl.trim()));
+  const resolved = new URL(trimmed);
+  const pathname = trimSlashSuffix(resolved.pathname);
+  return `${resolved.protocol}//${resolved.host}${pathname && pathname !== '/' ? pathname : ''}`;
+}
+
+export function deriveLarkDocumentBaseUrl(apiBaseUrl: string): string {
+  return normalizeLarkDocumentBaseUrl(buildDocumentOrigin(apiBaseUrl));
+}
+
 export function buildLarkDocumentUrl(baseUrl: string, documentId: string): string {
-  const origin = buildDocumentOrigin(baseUrl);
+  const origin = normalizeLarkDocumentBaseUrl(baseUrl);
   return `${origin}/docx/${encodeURIComponent(documentId)}`;
 }
