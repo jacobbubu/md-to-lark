@@ -126,7 +126,7 @@ Notes:
 
 Releases are now driven by `semantic-release`.
 
-- The release workflow runs on every push to `main`
+- Only pushes to `main` can trigger a real release
 - Version numbers are calculated from commit messages
 - GitHub Releases and npm publishing are both handled automatically
 - `CHANGELOG.md` is maintained by CI
@@ -136,6 +136,12 @@ Required repository setup:
 - GitHub Actions must be enabled
 - The repository must have an `NPM_TOKEN` secret with publish permission for `@jacobbubu/md-to-lark`
 - Commits merged into `main` should continue to use Conventional Commit style such as `feat:` and `fix:`
+
+Guardrails:
+
+- Non-`main` branches do not trigger the release workflow
+- Non-`main` branches can still run local checks, tests, and build verification
+- npm publishing is expected to happen only through the `main` branch CI flow
 
 ## Core Capabilities
 
