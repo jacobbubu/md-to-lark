@@ -25,6 +25,7 @@ export interface PublishStageArtifact {
   sourcePath: string;
   title: string;
   documentId: string | null;
+  documentUrl: string | null;
   rootBlockId: string | null;
   createdAt: string;
   finishedAt: string;

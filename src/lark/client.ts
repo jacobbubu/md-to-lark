@@ -43,3 +43,14 @@ export function createLarkClientConfigFromEnv(env: NodeJS.ProcessEnv): LarkClien
     userAccessToken,
   };
 }
+
+function buildDocumentOrigin(baseUrl: string): string {
+  const resolved = new URL(baseUrl);
+  const hostname = resolved.hostname.startsWith('open.') ? resolved.hostname.slice(5) : resolved.hostname;
+  return `${resolved.protocol}//${hostname}`;
+}
+
+export function buildLarkDocumentUrl(baseUrl: string, documentId: string): string {
+  const origin = buildDocumentOrigin(baseUrl);
+  return `${origin}/docx/${encodeURIComponent(documentId)}`;
+}

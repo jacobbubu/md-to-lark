@@ -12,6 +12,7 @@
 
 1. `publishMdToLark`
 2. `PublishMdCliOptions`
+3. `PublishMdResult`
 
 也就是说，当前对外程序化调用的主入口就是：
 
@@ -22,13 +23,22 @@
 可以把它理解成：
 
 ```ts
-await publishMdToLark(options, env)
+const results = await publishMdToLark(options, env)
 ```
 
 其中：
 
 1. `options` 描述一次发布任务
 2. `env` 描述这次调用可见的环境变量
+
+返回值是一个数组，每一项都对应一篇 Markdown 的处理结果。
+
+每项当前包含：
+
+1. `documentId`
+2. `title`
+3. `status`
+4. `documentUrl`
 
 ## `options` 主要字段
 
@@ -73,7 +83,7 @@ await publishMdToLark(options, env)
 ```ts
 import { publishMdToLark } from '../src/index.ts';
 
-await publishMdToLark(
+const results = await publishMdToLark(
   {
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? 'fld_demo',
@@ -86,6 +96,8 @@ await publishMdToLark(
     LARK_TOKEN_TYPE: process.env.LARK_TOKEN_TYPE ?? 'tenant',
   },
 );
+
+console.log(results);
 ```
 
 当前仓库里现成的示例文件是：
@@ -97,7 +109,7 @@ await publishMdToLark(
 ```ts
 import { publishMdToLark } from '../src/index.ts';
 
-await publishMdToLark(
+const results = await publishMdToLark(
   {
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
@@ -105,6 +117,8 @@ await publishMdToLark(
   },
   process.env,
 );
+
+console.log(results[0]?.documentUrl);
 ```
 
 如果你要写入已有文档，可以传：
@@ -131,6 +145,11 @@ CLI 本质上也是在调用这层函数。
 3. 同样的 dry-run
 4. 同样的 pipeline cache
 5. 同样的飞书写入路径
+
+区别在于：
+
+1. 程序化调用直接拿返回数组
+2. CLI 会把同样的结果数组打印到 stdout
 
 ## 当前程序化调用更适合做什么
 

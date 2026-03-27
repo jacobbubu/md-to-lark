@@ -9,6 +9,13 @@ import { sleep } from '../../shared/rate-limiter.js';
 export { getPublishMdUsage, parsePublishMdArgs };
 export type { PublishMdCliOptions };
 
+export interface PublishMdResult {
+  documentId: string | null;
+  title: string;
+  status: 'dry-run' | 'published' | 'failed';
+  documentUrl: string | null;
+}
+
 type FolderDocIndex = Map<string, string[]>;
 
 function buildFolderDocIndex(entries: Array<{ token: string; name: string; type: string }>): FolderDocIndex {
@@ -82,7 +89,7 @@ function createFolderDocumentResolver(
 export async function publishMdToLark(
   options: PublishMdCliOptions,
   env: NodeJS.ProcessEnv = process.env,
-): Promise<void> {
+): Promise<PublishMdResult[]> {
   const inputSet = await resolvePublishInputSet(options.inputPath);
   const markdownPreset = await loadMarkdownPreset(options.presetPath);
   if (options.documentId && inputSet.markdownFiles.length !== 1) {
@@ -97,11 +104,12 @@ export async function publishMdToLark(
     options.dryRun || normalizedDocumentId
       ? undefined
       : createFolderDocumentResolver(runtime, options);
+  const results: PublishMdResult[] = [];
 
   for (let index = 0; index < inputSet.markdownFiles.length; index += 1) {
     const markdownPath = inputSet.markdownFiles[index]!;
     const perFileOptions = normalizedDocumentId ? { ...options, documentId: normalizedDocumentId } : options;
-    await processSingleMarkdownFile({
+    const result = await processSingleMarkdownFile({
       runtime,
       inputSet,
       options: perFileOptions,
@@ -109,14 +117,22 @@ export async function publishMdToLark(
       index,
       ...(resolveTargetDocumentId ? { resolveTargetDocumentId } : {}),
     });
+    results.push({
+      documentId: result.documentId,
+      title: result.title,
+      status: result.status,
+      documentUrl: result.documentUrl,
+    });
 
     if (!options.dryRun && index < inputSet.markdownFiles.length - 1 && runtime.publishCooldownMs > 0) {
-      console.log(
+      console.error(
         `[${index + 1}/${inputSet.markdownFiles.length}] Cooldown ${runtime.publishCooldownMs}ms before next markdown...`,
       );
       await sleep(runtime.publishCooldownMs);
     }
   }
+
+  return results;
 }
 
 export async function runPublishMdToLarkCli(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -125,5 +141,6 @@ export async function runPublishMdToLarkCli(argv: string[], env: NodeJS.ProcessE
     return;
   }
   const options = parsePublishMdArgs(argv, env);
-  await publishMdToLark(options, env);
+  const results = await publishMdToLark(options, env);
+  process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
 }

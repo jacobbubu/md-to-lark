@@ -96,6 +96,7 @@ export interface ProcessSingleMarkdownFileResult {
   stagePaths: PipelineStagePaths;
   title: string;
   documentId: string | null;
+  documentUrl: string | null;
   status: PublishStageArtifact['status'];
 }
 
@@ -115,7 +116,7 @@ export async function processSingleMarkdownFile(
       total: inputSet.markdownFiles.length,
       env: runtime.env,
       log: (...args: unknown[]) =>
-        console.log(`[preset ${index + 1}/${inputSet.markdownFiles.length}]`, ...args.map((arg) => String(arg))),
+        console.error(`[preset ${index + 1}/${inputSet.markdownFiles.length}]`, ...args.map((arg) => String(arg))),
     });
   }
 
@@ -131,7 +132,7 @@ export async function processSingleMarkdownFile(
   });
   markdown = prepareResult.preparedContent;
   await writePrepareStage(stagePaths, markdown, prepareResult);
-  console.log(
+  console.error(
     `[prepare ${index + 1}/${inputSet.markdownFiles.length}] rewritten=${prepareResult.rewrittenCount} downloaded=${prepareResult.downloadedCount} failed=${prepareResult.failedCount} log=${prepareResult.logFilePath}`,
   );
 
@@ -173,6 +174,7 @@ export async function processSingleMarkdownFile(
       sourcePath: path.resolve(markdownPath),
       title,
       documentId: null,
+      documentUrl: null,
       rootBlockId: null,
       createdAt: startedAt,
       finishedAt: new Date().toISOString(),
@@ -182,19 +184,20 @@ export async function processSingleMarkdownFile(
     };
     await writePublishStageArtifact(stagePaths, dryRunArtifact);
 
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] input: ${markdownPath}`);
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] title: ${title}`);
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] blocks: ${Object.keys(last.blocks).length}`);
-    console.log(
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] input: ${markdownPath}`);
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] title: ${title}`);
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] blocks: ${Object.keys(last.blocks).length}`);
+    console.error(
       `[dry-run ${index + 1}/${inputSet.markdownFiles.length}] btt blocks: ${Object.keys(btt.flatBlocks).length}`,
     );
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid patches: ${mermaidByBlockId.size}`);
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid target: ${runtime.mermaidRenderConfig.target}`);
-    console.log(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] local assets: ${localAssetByBlockId.size}`);
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid patches: ${mermaidByBlockId.size}`);
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid target: ${runtime.mermaidRenderConfig.target}`);
+    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] local assets: ${localAssetByBlockId.size}`);
     return {
       stagePaths,
       title,
       documentId: null,
+      documentUrl: null,
       status: 'dry-run',
     };
   }
@@ -256,6 +259,7 @@ export async function processSingleMarkdownFile(
       sourcePath: path.resolve(markdownPath),
       title,
       documentId: documentId || null,
+      documentUrl: documentId ? runtime.documentUrlFor(documentId) : null,
       rootBlockId,
       createdAt: startedAt,
       finishedAt: new Date().toISOString(),
@@ -268,11 +272,14 @@ export async function processSingleMarkdownFile(
     throw error;
   }
 
+  const documentUrl = runtime.documentUrlFor(documentId);
+
   const successArtifact: PublishStageArtifact = {
     status: 'published',
     sourcePath: path.resolve(markdownPath),
     title,
     documentId,
+    documentUrl,
     rootBlockId,
     createdAt: startedAt,
     finishedAt: new Date().toISOString(),
@@ -282,10 +289,11 @@ export async function processSingleMarkdownFile(
   };
   await writePublishStageArtifact(stagePaths, successArtifact);
 
-  console.log(`[${index + 1}/${inputSet.markdownFiles.length}] Published markdown: ${markdownPath}`);
-  console.log(`[${index + 1}/${inputSet.markdownFiles.length}] Document ID: ${documentId}`);
-  console.log(`[${index + 1}/${inputSet.markdownFiles.length}] Title: ${title}`);
-  console.log(
+  console.error(`[${index + 1}/${inputSet.markdownFiles.length}] Published markdown: ${markdownPath}`);
+  console.error(`[${index + 1}/${inputSet.markdownFiles.length}] Document ID: ${documentId}`);
+  console.error(`[${index + 1}/${inputSet.markdownFiles.length}] Document URL: ${documentUrl}`);
+  console.error(`[${index + 1}/${inputSet.markdownFiles.length}] Title: ${title}`);
+  console.error(
     `[${index + 1}/${inputSet.markdownFiles.length}] stage-cache: ${stagePaths.rootDir} (00-source..05-publish)`,
   );
 
@@ -293,6 +301,7 @@ export async function processSingleMarkdownFile(
     stagePaths,
     title,
     documentId,
+    documentUrl,
     status: 'published',
   };
 }

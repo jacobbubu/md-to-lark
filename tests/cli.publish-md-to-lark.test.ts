@@ -66,9 +66,19 @@ test('CLI dry-run exits with code 0 for a valid markdown input', async (t) => {
 
   const result = await runCli(['--input', file, '--dry-run', '--folder', 'fld_cli'], baseEnv);
   assert.equal(result.code, 0);
-  assert.match(result.stdout, /Resolved markdown files: 1 \(single\)/);
-  assert.match(result.stdout, /\[dry-run 1\/1\] input:/);
-  assert.equal(result.stderr.trim(), '');
+  const payload = JSON.parse(result.stdout) as Array<{
+    documentId: string | null;
+    documentUrl: string | null;
+    status: string;
+    title: string;
+  }>;
+  assert.equal(payload.length, 1);
+  assert.equal(payload[0]?.documentId, null);
+  assert.equal(payload[0]?.documentUrl, null);
+  assert.equal(payload[0]?.status, 'dry-run');
+  assert.match(payload[0]?.title ?? '', /^\d{8}-CLI Dry Run$/);
+  assert.match(result.stderr, /Resolved markdown files: 1 \(single\)/);
+  assert.match(result.stderr, /\[dry-run 1\/1\] input:/);
 });
 
 test('CLI --help exits with code 0 and prints usage', async () => {

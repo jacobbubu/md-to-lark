@@ -65,6 +65,15 @@ This runs the full pipeline without actually writing to Feishu. After that looks
 npm run publish:md -- --input ./test-md/comp/comp.md
 ```
 
+Successful CLI runs now print a JSON array to stdout. Each item contains:
+
+- `documentId`
+- `title`
+- `status`
+- `documentUrl`
+
+Progress logs and exceptions are written to stderr.
+
 ## Common Commands
 
 Basic publish:

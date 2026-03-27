@@ -26,8 +26,8 @@ test('live publish creates a new Feishu doc and readback matches basic structure
   const title = buildE2ETitle(live, 'basic');
   await writeFile(markdownPath, '# Visible Heading\n\nAlpha paragraph.\n\n- one\n- two\n', 'utf8');
 
-  await withSilencedConsole(async () => {
-    await publishMdToLark(
+  const results = await withSilencedConsole(async () => {
+    return publishMdToLark(
       {
         inputPath: markdownPath,
         title,
@@ -39,9 +39,13 @@ test('live publish creates a new Feishu doc and readback matches basic structure
       live.env,
     );
   });
+  assert.equal(results.length, 1);
+  assert.equal(results[0]?.status, 'published');
+  assert.ok(results[0]?.documentId);
+  assert.match(results[0]?.documentUrl ?? '', new RegExp(`/docx/${results[0]?.documentId}$`));
 
   const ctx = createLiveLarkContext(live);
-  const documentId = await waitForDocumentIdByTitle(ctx, title);
+  const documentId = results[0]?.documentId ?? (await waitForDocumentIdByTitle(ctx, title));
   const snapshot = await waitForLiveDocumentSnapshot(
     ctx,
     documentId,

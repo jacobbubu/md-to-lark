@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   console.log('[module-usage] input:', inputPath);
   console.log('[module-usage] mode: dry-run publish to lark');
 
-  await publishMdToLark(
+  const results = await publishMdToLark(
     {
       inputPath,
       folderToken,
@@ -24,6 +24,8 @@ async function main(): Promise<void> {
     },
     env,
   );
+
+  console.log(JSON.stringify(results, null, 2));
 }
 
 void main();
