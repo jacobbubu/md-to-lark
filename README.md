@@ -48,6 +48,12 @@ LARK_TOKEN_TYPE=tenant
 LARK_FOLDER_TOKEN="xxx"
 ```
 
+If you want the returned `documentUrl` to use a specific browser domain, set this too:
+
+```env
+LARK_DOCUMENT_BASE_URL="https://li.feishu.cn"
+```
+
 Notes:
 
 - `--dry-run` still validates Feishu configuration first. It is not a zero-config mode.
@@ -73,6 +79,12 @@ Successful CLI runs now print a JSON array to stdout. Each item contains:
 - `documentUrl`
 
 Progress logs and exceptions are written to stderr.
+
+`documentUrl` is built from `documentId` plus a document base URL:
+
+- Prefer `--document-base-url`
+- Otherwise use `LARK_DOCUMENT_BASE_URL`
+- Otherwise fall back to the current compatibility derivation from `LARK_BASE_URL`
 
 ## Common Commands
 

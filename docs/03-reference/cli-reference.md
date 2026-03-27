@@ -31,6 +31,7 @@ npm run publish:md -- --input <file.md|dir> \
   [--title <doc_title_or_prefix>] \
   [--date-prefix|--no-date-prefix] \
   [--preset <preset_name_or_module_path>] \
+  [--document-base-url <base_url>] \
   [--folder <folder_token>] \
   [--doc <document_id>] \
   [--download-remote-images|--no-download-remote-images] \
@@ -145,6 +146,27 @@ stderr 负责：
 推荐文档：
 
 1. `docs/02-guides/presets.md`
+
+## 结果链接相关
+
+### `--document-base-url <base_url>`
+
+显式指定结果里 `documentUrl` 使用的文档访问 base URL。
+
+常见例子：
+
+1. `https://li.feishu.cn`
+2. `https://feishu.cn`
+
+优先级：
+
+1. 高于 `LARK_DOCUMENT_BASE_URL`
+2. 如果命令行和环境变量都没配，才会回退到当前兼容推导逻辑
+
+注意：
+
+1. 这个参数只影响结果里的 `documentUrl`
+2. 它不影响 Open API 请求地址
 
 ## 远程资源预处理相关
 

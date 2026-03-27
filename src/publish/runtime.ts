@@ -6,7 +6,12 @@ import {
   normalizeMermaidRenderTarget,
 } from '../commands/publish-md/mermaid-render.js';
 import type { LoadedMarkdownPreset } from '../commands/publish-md/preset-loader.js';
-import { buildLarkDocumentUrl, createLarkClientConfigFromEnv } from '../lark/index.js';
+import {
+  buildLarkDocumentUrl,
+  createLarkClientConfigFromEnv,
+  deriveLarkDocumentBaseUrl,
+  normalizeLarkDocumentBaseUrl,
+} from '../lark/index.js';
 import type { LarkRequestOptions } from '../lark/docx/ops.js';
 import type { MermaidRenderConfig } from '../lark/docx/render-types.js';
 import type { PrepareMarkdownOptions } from '../pipeline/markdown/prepare-markdown.js';
@@ -61,6 +66,7 @@ export interface PublishPrepareRuntimeConfig extends Omit<PrepareMarkdownOptions
 export interface PublishRuntime {
   env: NodeJS.ProcessEnv;
   markdownPreset: LoadedMarkdownPreset | null;
+  documentBaseUrl: string;
   documentUrlFor: (documentId: string) => string;
   authOptions: LarkRequestOptions;
   sdkClient: lark.Client;
@@ -104,6 +110,12 @@ export function buildPublishRuntime(
   const pipelineCacheRootDir = path.resolve(
     options.pipelineCacheDir ?? env.PIPELINE_CACHE_DIR ?? './out/pipeline-cache',
   );
+  const documentBaseUrlCandidate = options.documentBaseUrl?.trim()
+    ? options.documentBaseUrl.trim()
+    : env.LARK_DOCUMENT_BASE_URL?.trim()
+      ? env.LARK_DOCUMENT_BASE_URL.trim()
+      : deriveLarkDocumentBaseUrl(config.baseUrl);
+  const documentBaseUrl = normalizeLarkDocumentBaseUrl(documentBaseUrlCandidate);
   const prepareTimeoutMs = toPositiveInt(Number((env.PREPARE_TIMEOUT_MS ?? '').trim())) ?? 15_000;
   const prepareMaxRetries = toNonNegativeInt(Number((env.PREPARE_MAX_RETRIES ?? '').trim())) ?? 3;
   const prepareBackoffBaseMs = toPositiveInt(Number((env.PREPARE_BACKOFF_BASE_MS ?? '').trim())) ?? 500;
@@ -133,7 +145,8 @@ export function buildPublishRuntime(
   return {
     env,
     markdownPreset,
-    documentUrlFor: (documentId: string) => buildLarkDocumentUrl(config.baseUrl, documentId),
+    documentBaseUrl,
+    documentUrlFor: (documentId: string) => buildLarkDocumentUrl(documentBaseUrl, documentId),
     authOptions,
     sdkClient,
     docxLimiter: new RateLimiter(docxLimiterIntervalMs),
@@ -179,6 +192,7 @@ export function logPublishRuntimeSummary(
         )} diagram_type=${String(runtime.mermaidRenderConfig.board.diagramType ?? '(default)')}`
       : 'Mermaid: target=text-drawing',
   );
+  console.error(`Document URL base: ${runtime.documentBaseUrl}`);
   if (runtime.markdownPreset) {
     console.error(`Preset: ${runtime.markdownPreset.displayPath}`);
   }

@@ -40,6 +40,12 @@ const results = await publishMdToLark(options, env)
 3. `status`
 4. `documentUrl`
 
+`documentUrl` 的来源优先级是：
+
+1. `options.documentBaseUrl`
+2. `env.LARK_DOCUMENT_BASE_URL`
+3. 未配置时回退到当前兼容推导逻辑
+
 ## `options` 主要字段
 
 当前最常用字段有：
@@ -47,18 +53,19 @@ const results = await publishMdToLark(options, env)
 1. `inputPath`
 2. `folderToken`
 3. `documentId`
-4. `title`
-5. `titleDatePrefix`
-6. `presetPath`
-7. `downloadRemoteImages`
-8. `ytDlpPath`
-9. `ytDlpCookiesPath`
-10. `pipelineCacheDir`
-11. `mermaidTarget`
-12. `mermaidBoardSyntaxType`
-13. `mermaidBoardStyleType`
-14. `mermaidBoardDiagramType`
-15. `dryRun`
+4. `documentBaseUrl`
+5. `title`
+6. `titleDatePrefix`
+7. `presetPath`
+8. `downloadRemoteImages`
+9. `ytDlpPath`
+10. `ytDlpCookiesPath`
+11. `pipelineCacheDir`
+12. `mermaidTarget`
+13. `mermaidBoardSyntaxType`
+14. `mermaidBoardStyleType`
+15. `mermaidBoardDiagramType`
+16. `dryRun`
 
 这些字段和 CLI 参数大体对应。
 
@@ -87,6 +94,7 @@ const results = await publishMdToLark(
   {
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? 'fld_demo',
+    documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
     dryRun: true,
   },
   {
@@ -113,6 +121,7 @@ const results = await publishMdToLark(
   {
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
     dryRun: false,
   },
   process.env,

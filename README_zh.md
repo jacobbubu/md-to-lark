@@ -48,6 +48,12 @@ LARK_TOKEN_TYPE=tenant
 LARK_FOLDER_TOKEN="xxx"
 ```
 
+如果你希望结果里的 `documentUrl` 使用指定的文档访问域，也可以同时配置：
+
+```env
+LARK_DOCUMENT_BASE_URL="https://li.feishu.cn"
+```
+
 注意：
 
 - `--dry-run` 也会先校验飞书配置，不是零配置模式。
@@ -73,6 +79,12 @@ CLI 成功执行后会在 stdout 打印一个 JSON 数组，每项都包含：
 - `documentUrl`
 
 进度日志和异常信息统一写到 stderr。
+
+`documentUrl` 的生成规则是：
+
+- 优先使用 `--document-base-url`
+- 否则使用 `LARK_DOCUMENT_BASE_URL`
+- 仍未配置时，再回退到当前基于 `LARK_BASE_URL` 的兼容推导
 
 ## 常用命令
 

@@ -27,6 +27,16 @@ test('parsePublishMdArgs parses --preset built-in name', () => {
   assert.equal(options.presetPath, 'medium');
 });
 
+test('parsePublishMdArgs parses --document-base-url', () => {
+  const options = parsePublishMdArgs(
+    ['--input', './examples/a.md', '--document-base-url', 'https://li.feishu.cn', '--dry-run'],
+    {
+      LARK_FOLDER_TOKEN: 'fld_test_token',
+    },
+  );
+  assert.equal(options.documentBaseUrl, 'https://li.feishu.cn');
+});
+
 test('parsePublishMdArgs parses positional input and --doc without folder', () => {
   const options = parsePublishMdArgs(['./examples/a.md', '--doc', 'doccn123'], {});
   assert.deepEqual(options, {
@@ -120,6 +130,7 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /^Usage:/m);
   assert.match(usage, /--input/);
   assert.match(usage, /--preset/);
+  assert.match(usage, /--document-base-url/);
   assert.match(usage, /--download-remote-images/);
   assert.match(usage, /--yt-dlp-path/);
   assert.match(usage, /--pipeline-cache-dir/);

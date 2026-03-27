@@ -85,6 +85,32 @@ test('buildPublishRuntime derives env and option defaults into normalized runtim
   assert.equal(runtime.documentUrlFor('doccn_demo'), 'https://feishu.cn/docx/doccn_demo');
 });
 
+test('buildPublishRuntime prefers explicit document base url, then env, then derived fallback', () => {
+  const fromOption = buildPublishRuntime(
+    {
+      ...baseOptions,
+      documentBaseUrl: 'https://li.feishu.cn/docx/',
+    },
+    {
+      ...baseEnv,
+      LARK_DOCUMENT_BASE_URL: 'https://env.feishu.cn',
+    },
+    null,
+  );
+  assert.equal(fromOption.documentBaseUrl, 'https://li.feishu.cn');
+  assert.equal(fromOption.documentUrlFor('doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
+
+  const fromEnv = buildPublishRuntime(
+    baseOptions,
+    {
+      ...baseEnv,
+      LARK_DOCUMENT_BASE_URL: 'https://li.feishu.cn/',
+    },
+    null,
+  );
+  assert.equal(fromEnv.documentUrlFor('doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
+});
+
 test('logPublishRuntimeSummary prints resolved runtime and preset lines', async () => {
   const preset: LoadedMarkdownPreset = {
     sourcePath: '/tmp/preset.mjs',
