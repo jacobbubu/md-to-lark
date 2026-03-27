@@ -126,7 +126,7 @@ npm run test:e2e:watch
 
 当前发布流程已经改成 `semantic-release`。
 
-- 每次向 `main` 推送后，GitHub Actions 都会尝试执行发布
+- 只有向 `main` 的推送才会触发正式发布
 - 版本号会根据提交信息自动计算
 - GitHub Release 和 npm 发布都会自动处理
 - `CHANGELOG.md` 由 CI 自动维护
@@ -136,6 +136,12 @@ npm run test:e2e:watch
 - GitHub Actions 处于启用状态
 - 仓库配置 `NPM_TOKEN` secret，且它对 `@jacobbubu/md-to-lark` 具备发布权限
 - 合并到 `main` 的提交继续遵守 Conventional Commit 风格，例如 `feat:`、`fix:`
+
+收口规则：
+
+- 非 `main` 分支不会触发 release workflow
+- 非 `main` 分支仍然可以做本地检查、测试和构建验证
+- npm 发布只应通过 `main` 分支上的 CI 自动执行
 
 ## 关键能力
 
