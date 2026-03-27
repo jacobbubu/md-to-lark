@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/jacobbubu/md-to-lark/compare/v1.0.0...v1.1.0) (2026-03-27)
+
+
+### Features
+
+* structure cli publish output ([#23](https://github.com/jacobbubu/md-to-lark/issues/23)) ([f0a1dee](https://github.com/jacobbubu/md-to-lark/commit/f0a1deecd3f8159aaac5964bcee1974f297b598e))
+
 # 1.0.0 (2026-03-27)
 
 
