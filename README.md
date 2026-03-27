@@ -122,6 +122,21 @@ Notes:
 - `npm run test:e2e` runs real Feishu end-to-end tests and requires a local `.env-test`.
 - `.env-test` is already ignored by Git and can be prepared from `.env-test.example`.
 
+## Release Process
+
+Releases are now driven by `semantic-release`.
+
+- The release workflow runs on every push to `main`
+- Version numbers are calculated from commit messages
+- GitHub Releases and npm publishing are both handled automatically
+- `CHANGELOG.md` is maintained by CI
+
+Required repository setup:
+
+- GitHub Actions must be enabled
+- The repository must have an `NPM_TOKEN` secret with publish permission for `@jacobbubu/md-to-lark`
+- Commits merged into `main` should continue to use Conventional Commit style such as `feat:` and `fix:`
+
 ## Core Capabilities
 
 - Single-file and recursive directory publish

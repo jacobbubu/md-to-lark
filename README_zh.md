@@ -122,6 +122,21 @@ npm run test:e2e:watch
 - `npm run test:e2e` 会跑真实飞书端到端测试，要求本地存在 `.env-test`。
 - `.env-test` 已加入 `.gitignore`，可从 `.env-test.example` 开始准备。
 
+## 发布方式
+
+当前发布流程已经改成 `semantic-release`。
+
+- 每次向 `main` 推送后，GitHub Actions 都会尝试执行发布
+- 版本号会根据提交信息自动计算
+- GitHub Release 和 npm 发布都会自动处理
+- `CHANGELOG.md` 由 CI 自动维护
+
+仓库还需要的发布条件：
+
+- GitHub Actions 处于启用状态
+- 仓库配置 `NPM_TOKEN` secret，且它对 `@jacobbubu/md-to-lark` 具备发布权限
+- 合并到 `main` 的提交继续遵守 Conventional Commit 风格，例如 `feat:`、`fix:`
+
 ## 关键能力
 
 - 单文件和目录递归发布

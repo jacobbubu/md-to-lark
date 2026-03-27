@@ -19,6 +19,7 @@
     "test:watch": "node --test --watch --import tsx \"tests/**/*.test.ts\"",
     "clean": "node scripts/clean-dist.mjs",
     "build": "npm run clean && tsc -p tsconfig.json && node scripts/ensure-cli-executable.mjs",
+    "release": "semantic-release",
     "dev": "tsx src/cli/publish-md-to-lark.ts",
     "dev:playground": "tsx devserver/jquery-playground.ts",
     "publish:md": "tsx src/cli/publish-md-to-lark.ts",
@@ -61,9 +62,16 @@
   },
   "devDependencies": {
     "@larksuiteoapi/node-sdk": "^1.59.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.6",
+    "@semantic-release/npm": "^12.0.2",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "@types/node": "^25.3.3",
     "playwright": "^1.58.2",
     "prettier": "^3.8.1",
+    "semantic-release": "^24.2.9",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
