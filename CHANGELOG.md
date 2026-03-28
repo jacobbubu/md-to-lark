@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/jacobbubu/md-to-lark/compare/v1.2.0...v1.3.0) (2026-03-28)
+
+
+### Features
+
+* support ordered preset chains ([#28](https://github.com/jacobbubu/md-to-lark/issues/28)) ([c0217f9](https://github.com/jacobbubu/md-to-lark/commit/c0217f990376b318e583c874cb26faa47322f93e))
+
 # [1.2.0](https://github.com/jacobbubu/md-to-lark/compare/v1.1.0...v1.2.0) (2026-03-27)
 
 
