@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/jacobbubu/md-to-lark/compare/v1.3.0...v1.3.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* correct Feishu code block language mappings ([#33](https://github.com/jacobbubu/md-to-lark/issues/33)) ([#6](https://github.com/jacobbubu/md-to-lark/issues/6)) ([6599216](https://github.com/jacobbubu/md-to-lark/commit/6599216ee3bc9e26e868980487927bbb72fd56b1))
+
 # [1.3.0](https://github.com/jacobbubu/md-to-lark/compare/v1.2.0...v1.3.0) (2026-03-28)
 
 
