@@ -5,6 +5,7 @@ export interface PublishMdCliOptions {
   title?: string;
   titleDatePrefix?: boolean;
   presetPath?: string;
+  presetPaths?: string[];
   documentBaseUrl?: string;
   folderToken: string;
   documentId?: string;
@@ -21,14 +22,14 @@ export interface PublishMdCliOptions {
 
 function usage(): string {
   return [
-    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>] [--document-base-url <base_url>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
+    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
     '',
     'Options:',
     '  --input   Markdown file path, or directory path (publish all *.md recursively).',
     '  --title   Single-file title. In directory mode this is used as title prefix.',
     '  --date-prefix      Enable date prefix in final title: YYYYMMDD-<title>. Default: enabled.',
     '  --no-date-prefix   Disable date prefix in final title.',
-    '  --preset  Optional preset module path (js/mjs/cjs/ts) or built-in name (e.g. medium). Used to transform markdown before publish pipeline.',
+    '  --preset  Optional preset module path (js/mjs/cjs/ts) or built-in name (e.g. medium). Repeatable; presets run in the given order before publish pipeline.',
     '  --document-base-url Base URL used to build documentUrl results (for example https://li.feishu.cn).',
     '  --folder  Feishu folder token. Default: LARK_FOLDER_TOKEN from .env',
     '  --doc     Existing Feishu document id (single-file only). If set, publish directly into this doc (and clear content first).',
@@ -75,7 +76,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
   let inputPath = '';
   let title = '';
   let titleDatePrefix: boolean | undefined;
-  let presetPath = '';
+  const presetPaths: string[] = [];
   let documentBaseUrl = '';
   let folderToken = (env.LARK_FOLDER_TOKEN ?? '').trim();
   let documentId: string | undefined;
@@ -138,7 +139,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
     if (arg === '--preset') {
       const value = argv[i + 1];
       if (!value) throw new Error('Missing value for --preset.');
-      presetPath = value;
+      presetPaths.push(value);
       i += 1;
       continue;
     }
@@ -250,11 +251,18 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
     throw new Error('Folder token is required when --doc is not provided. Use --folder or set LARK_FOLDER_TOKEN.');
   }
 
+  const normalizedPresetPaths = presetPaths.map((presetPath) => presetPath.trim()).filter(Boolean);
+
   return {
     inputPath: inputPath.trim(),
     ...(title.trim() ? { title: title.trim() } : {}),
     ...(titleDatePrefix === undefined ? {} : { titleDatePrefix }),
-    ...(presetPath.trim() ? { presetPath: presetPath.trim() } : {}),
+    ...(normalizedPresetPaths.length > 0
+      ? {
+          ...(normalizedPresetPaths.length === 1 ? { presetPath: normalizedPresetPaths[0] } : {}),
+          presetPaths: normalizedPresetPaths,
+        }
+      : {}),
     ...(documentBaseUrl.trim() ? { documentBaseUrl: documentBaseUrl.trim() } : {}),
     folderToken,
     ...(documentId ? { documentId: documentId.trim() } : {}),

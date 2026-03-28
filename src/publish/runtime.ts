@@ -65,6 +65,7 @@ export interface PublishPrepareRuntimeConfig extends Omit<PrepareMarkdownOptions
 
 export interface PublishRuntime {
   env: NodeJS.ProcessEnv;
+  markdownPresets: LoadedMarkdownPreset[];
   markdownPreset: LoadedMarkdownPreset | null;
   documentBaseUrl: string;
   documentUrlFor: (documentId: string) => string;
@@ -86,7 +87,7 @@ export interface PublishRuntime {
 export function buildPublishRuntime(
   options: PublishMdCliOptions,
   env: NodeJS.ProcessEnv,
-  markdownPreset: LoadedMarkdownPreset | null,
+  markdownPresets: LoadedMarkdownPreset[],
 ): PublishRuntime {
   const config = createLarkClientConfigFromEnv(env);
   const sdkClient = new lark.Client({
@@ -144,7 +145,8 @@ export function buildPublishRuntime(
 
   return {
     env,
-    markdownPreset,
+    markdownPresets,
+    markdownPreset: markdownPresets[0] ?? null,
     documentBaseUrl,
     documentUrlFor: (documentId: string) => buildLarkDocumentUrl(documentBaseUrl, documentId),
     authOptions,
@@ -193,6 +195,10 @@ export function logPublishRuntimeSummary(
       : 'Mermaid: target=text-drawing',
   );
   console.error(`Document URL base: ${runtime.documentBaseUrl}`);
+  if (runtime.markdownPresets.length > 1) {
+    console.error(`Presets: ${runtime.markdownPresets.map((preset) => preset.displayPath).join(' -> ')}`);
+    return;
+  }
   if (runtime.markdownPreset) {
     console.error(`Preset: ${runtime.markdownPreset.displayPath}`);
   }

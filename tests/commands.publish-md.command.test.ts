@@ -219,6 +219,68 @@ test('publishMdToLark dry-run applies preset transform before deriving title', a
   assert.ok(logs.some((line) => /\[dry-run 1\/1\] title: \d{8}-After/.test(line)));
 });
 
+test('publishMdToLark dry-run applies multiple presets in order', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'single.md');
+  const firstPreset = path.join(dir, 'first-preset.mjs');
+  const secondPreset = path.join(dir, 'second-preset.mjs');
+  await writeFile(file, '# Before\n\ncontent', 'utf8');
+  await writeFile(
+    firstPreset,
+    [
+      'export default function transformMarkdown(markdown) {',
+      "  return markdown.replace('# Before', '# Middle');",
+      '}',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+  await writeFile(
+    secondPreset,
+    [
+      'export default function transformMarkdown(markdown) {',
+      "  return markdown.replace('# Middle', '# After');",
+      '}',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+
+  const { logs } = await withCapturedConsole(async () => {
+    await publishMdToLark(
+      {
+        inputPath: file,
+        folderToken: 'fld_dry_run',
+        pipelineCacheDir: path.join(dir, 'cache'),
+        dryRun: true,
+        presetPaths: [firstPreset, secondPreset],
+      },
+      baseEnv,
+    );
+  });
+
+  const cacheEntries = await readdir(path.join(dir, 'cache'), { withFileTypes: true });
+  const stageRoot = path.join(
+    path.join(dir, 'cache'),
+    cacheEntries.find((entry) => entry.isDirectory())?.name ?? '',
+  );
+  const sourcePreset = await readFile(path.join(stageRoot, '00-source', 'preset.md'), 'utf8');
+  const sourceMeta = JSON.parse(await readFile(path.join(stageRoot, '00-source', 'meta.json'), 'utf8')) as {
+    preset: string | null;
+    presets: string[];
+  };
+
+  assert.equal(sourcePreset, '# After\n\ncontent');
+  assert.equal(sourceMeta.preset, null);
+  assert.equal(sourceMeta.presets.length, 2);
+  assert.ok(logs.some((line) => line.includes('Presets:')));
+  assert.ok(logs.some((line) => /\[dry-run 1\/1\] title: \d{8}-After/.test(line)));
+});
+
 test('publishMdToLark dry-run accepts built-in preset name', async (t) => {
   const dir = await createTempDir();
   t.after(async () => {

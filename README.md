@@ -23,7 +23,7 @@ Notes:
 - Recursively publishing multiple `.md` files from a directory
 - Preparing local assets, remote images, and standalone URLs before publish
 - Running a full dry-run without writing to Feishu
-- Rewriting Markdown before publish with presets
+- Rewriting Markdown before publish with one or more ordered presets
 
 ## Quick Start
 
@@ -109,6 +109,7 @@ Presets, Mermaid, and stage artifacts:
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
+npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
 ```
@@ -173,6 +174,7 @@ Guardrails:
 - Mermaid `text-drawing` and `board` output paths
 - Table width heuristics and numeric-column right alignment
 - Chinese Markdown formatting preset (`zh-format`)
+- Ordered preset composition from CLI and programmatic usage
 - Stage cache output from `00-source` to `05-publish`
 - Programmatic access through `publishMdToLark`
 

@@ -57,15 +57,16 @@ const results = await publishMdToLark(options, env)
 5. `title`
 6. `titleDatePrefix`
 7. `presetPath`
-8. `downloadRemoteImages`
-9. `ytDlpPath`
-10. `ytDlpCookiesPath`
-11. `pipelineCacheDir`
-12. `mermaidTarget`
-13. `mermaidBoardSyntaxType`
-14. `mermaidBoardStyleType`
-15. `mermaidBoardDiagramType`
-16. `dryRun`
+8. `presetPaths`
+9. `downloadRemoteImages`
+10. `ytDlpPath`
+11. `ytDlpCookiesPath`
+12. `pipelineCacheDir`
+13. `mermaidTarget`
+14. `mermaidBoardSyntaxType`
+15. `mermaidBoardStyleType`
+16. `mermaidBoardDiagramType`
+17. `dryRun`
 
 这些字段和 CLI 参数大体对应。
 
@@ -122,6 +123,7 @@ const results = await publishMdToLark(
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
     documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
+    presetPaths: ['zh-format', './my-preset.mjs'],
     dryRun: false,
   },
   process.env,
@@ -137,6 +139,16 @@ console.log(results[0]?.documentUrl);
 如果你要用 preset，可以传：
 
 1. `presetPath`
+2. `presetPaths`
+
+推荐优先使用：
+
+1. `presetPaths`
+
+执行规则：
+
+1. `presetPaths` 里的多个 preset 会按顺序执行
+2. 如果同时传了 `presetPaths` 和 `presetPath`，优先使用 `presetPaths`
 
 ## 程序化调用和 CLI 的关系
 

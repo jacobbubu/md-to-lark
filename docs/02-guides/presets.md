@@ -10,7 +10,9 @@
 
 默认情况下，`publish:md` 不会对输入 Markdown 做额外改写。
 
-只有当你显式传入 `--preset <preset_ref>` 时，工具才会在进入预处理和解析之前，先执行一次预设转换（Preset Transform）。
+只有当你显式传入 `--preset <preset_ref>` 时，工具才会在进入预处理和解析之前，先执行预设转换（Preset Transform）。
+
+`--preset` 现在可以重复传入，多条 preset 会按给定顺序串行执行。
 
 这一步发生在发布链路的最前面，顺序是：
 
@@ -46,8 +48,15 @@
 
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
-npm run publish:md -- --input ./translated/article-zh.md --dry-run --preset zh-format
+npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-format
+npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-format --preset ./my-preset.mjs
 ```
+
+最后一条命令表示：
+
+1. 先执行 `zh-format`
+2. 再执行本地 `./my-preset.mjs`
+3. 第二个 preset 看到的是第一个 preset 改写后的结果
 
 当前支持的内置别名是：
 
@@ -87,6 +96,12 @@ export default function transformMarkdown(markdown, context) {
 
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset ./my-preset.mjs
+```
+
+如果你想组合多个 preset，直接重复传参：
+
+```bash
+npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-format --preset ./my-preset.mjs
 ```
 
 ## 支持哪些导出形式
@@ -153,7 +168,7 @@ content
 
 1. `original.md` 是原始输入。
 2. `preset.md` 是 preset 执行后的结果。
-3. `meta.json` 会记录当前用了哪个 preset。
+3. `meta.json` 会记录当前用了哪些 preset。
 
 推荐命令：
 
@@ -161,7 +176,7 @@ content
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset ./my-preset.mjs
 ```
 
-如果你怀疑 preset 影响了后续标题、链接或块结构，先比较 `original.md` 和 `preset.md`，再看后面的 `prepared.md`、`last.json` 和 `btt.json`。
+如果你怀疑 preset 影响了后续标题、链接或块结构，先比较 `original.md` 和 `preset.md`，再看 `meta.json` 里的 `presets` 数组，最后看后面的 `prepared.md`、`last.json` 和 `btt.json`。
 
 ## 常见用途
 
@@ -176,6 +191,10 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset ./my-pre
 ### 预先清洗内容
 
 例如在进入预处理之前，就先删除无意义的前缀、补空行、改某类非标准写法。
+
+### 顺序组合多个 preset
+
+例如先跑 `zh-format` 做中文 Markdown 规范化，再跑你自己的本地 preset 做标题、链接或平台语法修正。
 
 ## 边界和常见失败
 

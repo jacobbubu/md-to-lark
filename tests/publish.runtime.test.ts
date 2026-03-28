@@ -60,7 +60,7 @@ test('buildPublishRuntime derives env and option defaults into normalized runtim
       LARK_MERMAID_BOARD_SYNTAX_TYPE: '9',
       LARK_MERMAID_BOARD_DIAGRAM_TYPE: '11',
     },
-    null,
+    [],
   );
 
   assert.equal(runtime.docxLimiterIntervalMs, 123);
@@ -95,7 +95,7 @@ test('buildPublishRuntime prefers explicit document base url, then env, then der
       ...baseEnv,
       LARK_DOCUMENT_BASE_URL: 'https://env.feishu.cn',
     },
-    null,
+    [],
   );
   assert.equal(fromOption.documentBaseUrl, 'https://li.feishu.cn');
   assert.equal(fromOption.documentUrlFor('doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
@@ -106,7 +106,7 @@ test('buildPublishRuntime prefers explicit document base url, then env, then der
       ...baseEnv,
       LARK_DOCUMENT_BASE_URL: 'https://li.feishu.cn/',
     },
-    null,
+    [],
   );
   assert.equal(fromEnv.documentUrlFor('doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
 });
@@ -117,7 +117,7 @@ test('logPublishRuntimeSummary prints resolved runtime and preset lines', async 
     displayPath: 'builtin:test-preset',
     transform: (markdown) => markdown,
   };
-  const runtime = buildPublishRuntime(baseOptions, baseEnv, preset);
+  const runtime = buildPublishRuntime(baseOptions, baseEnv, [preset]);
 
   const { logs } = await withCapturedConsole(async () => {
     logPublishRuntimeSummary(runtime, 2, 'directory');
@@ -128,4 +128,25 @@ test('logPublishRuntimeSummary prints resolved runtime and preset lines', async 
   assert.ok(logs.some((line) => line.includes('Prepare: download_remote_images=')));
   assert.ok(logs.some((line) => line.includes('Mermaid: target=text-drawing')));
   assert.ok(logs.some((line) => line.includes('Preset: builtin:test-preset')));
+});
+
+test('logPublishRuntimeSummary prints ordered preset chain when multiple presets are configured', async () => {
+  const runtime = buildPublishRuntime(baseOptions, baseEnv, [
+    {
+      sourcePath: '/tmp/a.mjs',
+      displayPath: 'builtin:zh-format',
+      transform: (markdown) => markdown,
+    },
+    {
+      sourcePath: '/tmp/b.mjs',
+      displayPath: './my-preset.mjs',
+      transform: (markdown) => markdown,
+    },
+  ]);
+
+  const { logs } = await withCapturedConsole(async () => {
+    logPublishRuntimeSummary(runtime, 1, 'single');
+  });
+
+  assert.ok(logs.some((line) => line.includes('Presets: builtin:zh-format -> ./my-preset.mjs')));
 });

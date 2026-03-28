@@ -59,7 +59,7 @@
 从使用者视角看，这条链路可以理解成五步：
 
 1. 读取一个 Markdown 文件，或解析一个目录里的所有 Markdown。
-2. 如果配置了预设转换（Preset Transform），先改写 Markdown。
+2. 如果配置了一个或多个预设转换（Preset Transform），先按顺序改写 Markdown。
 3. 做预处理，例如下载远程图片、提取独立 URL 媒体、重写链接。
 4. 把 Markdown 逐步转换成内部中间表示，再转换成飞书块树。
 5. 根据模式选择：

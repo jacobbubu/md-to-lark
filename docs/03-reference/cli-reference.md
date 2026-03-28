@@ -30,7 +30,7 @@ npm run publish:md -- --input <file.md|dir>
 npm run publish:md -- --input <file.md|dir> \
   [--title <doc_title_or_prefix>] \
   [--date-prefix|--no-date-prefix] \
-  [--preset <preset_name_or_module_path>] \
+  [--preset <preset_name_or_module_path>]... \
   [--document-base-url <base_url>] \
   [--folder <folder_token>] \
   [--doc <document_id>] \
@@ -142,6 +142,18 @@ stderr 负责：
 
 1. 内置 preset 名称，例如 `medium`
 2. 本地模块路径，例如 `./my-preset.mjs`
+
+行为：
+
+1. 这个参数可以重复传入
+2. 多个 preset 会按给定顺序执行
+3. 任一 preset 失败，整次命令直接失败
+
+例子：
+
+```bash
+npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-format --preset ./my-preset.mjs
+```
 
 推荐文档：
 

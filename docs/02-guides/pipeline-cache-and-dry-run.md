@@ -74,6 +74,8 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --pipeline-cache-
 
 如果你怀疑 preset 改坏了内容，先对比 `original.md` 和 `preset.md`。
 
+如果这次用了多个 preset，再看 `meta.json` 里的 `presets` 数组，确认实际执行顺序。
+
 ### 01-prepare
 
 这一阶段用来回答“预处理改了什么，远程资源是否成功落地”。

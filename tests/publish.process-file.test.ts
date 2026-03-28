@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { processSingleMarkdownFile } from '../src/publish/process-file.js';
 import { buildPublishRuntime } from '../src/publish/runtime.js';
+import type { LoadedMarkdownPreset } from '../src/commands/publish-md/preset-loader.js';
 
 const baseEnv: NodeJS.ProcessEnv = {
   LARK_APP_ID: 'process_file_app_id',
@@ -48,7 +49,7 @@ test('processSingleMarkdownFile builds dry-run stage artifacts directly', async 
     pipelineCacheDir: path.join(dir, 'cache'),
   } as const;
 
-  const runtime = buildPublishRuntime(options, baseEnv, null);
+  const runtime = buildPublishRuntime(options, baseEnv, []);
   const result = await withSilencedConsole(async () =>
     processSingleMarkdownFile({
       runtime,
@@ -74,4 +75,112 @@ test('processSingleMarkdownFile builds dry-run stage artifacts directly', async 
   assert.match(publishResultText, /"status": "dry-run"/);
   assert.match(publishResultText, /"documentUrl": null/);
   assert.match(prepareLogText, /"generatedAt":/);
+});
+
+test('processSingleMarkdownFile applies multiple presets in order and records preset chain', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'single.md');
+  await writeFile(file, '# Before\n\ncontent', 'utf8');
+
+  const presets: LoadedMarkdownPreset[] = [
+    {
+      sourcePath: 'builtin:first',
+      displayPath: 'builtin:first',
+      transform: (markdown) => markdown.replace('# Before', '# Middle'),
+    },
+    {
+      sourcePath: 'builtin:second',
+      displayPath: 'builtin:second',
+      transform: (markdown) => markdown.replace('# Middle', '# After'),
+    },
+  ];
+
+  const options = {
+    inputPath: file,
+    folderToken: 'fld_test',
+    dryRun: true,
+    pipelineCacheDir: path.join(dir, 'cache'),
+  } as const;
+
+  const runtime = buildPublishRuntime(options, baseEnv, presets);
+  const result = await withSilencedConsole(async () =>
+    processSingleMarkdownFile({
+      runtime,
+      inputSet: {
+        mode: 'single',
+        rootPath: dir,
+        markdownFiles: [file],
+      },
+      options,
+      markdownPath: file,
+      index: 0,
+    }),
+  );
+
+  assert.match(result.title, /^\d{8}-After$/);
+  const sourcePreset = await readFile(path.join(result.stagePaths.sourceDir, 'preset.md'), 'utf8');
+  const sourceMeta = JSON.parse(await readFile(path.join(result.stagePaths.sourceDir, 'meta.json'), 'utf8')) as {
+    preset: string | null;
+    presets: string[];
+  };
+
+  assert.equal(sourcePreset, '# After\n\ncontent');
+  assert.equal(sourceMeta.preset, null);
+  assert.deepEqual(sourceMeta.presets, ['builtin:first', 'builtin:second']);
+});
+
+test('processSingleMarkdownFile stops when a later preset throws', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'single.md');
+  await writeFile(file, '# Before\n\ncontent', 'utf8');
+
+  const presets: LoadedMarkdownPreset[] = [
+    {
+      sourcePath: 'builtin:first',
+      displayPath: 'builtin:first',
+      transform: (markdown) => markdown.replace('content', 'patched'),
+    },
+    {
+      sourcePath: 'builtin:boom',
+      displayPath: 'builtin:boom',
+      transform: () => {
+        throw new Error('preset boom');
+      },
+    },
+  ];
+
+  const options = {
+    inputPath: file,
+    folderToken: 'fld_test',
+    dryRun: true,
+    pipelineCacheDir: path.join(dir, 'cache'),
+  } as const;
+
+  const runtime = buildPublishRuntime(options, baseEnv, presets);
+
+  await assert.rejects(
+    () =>
+      withSilencedConsole(async () =>
+        processSingleMarkdownFile({
+          runtime,
+          inputSet: {
+            mode: 'single',
+            rootPath: dir,
+            markdownFiles: [file],
+          },
+          options,
+          markdownPath: file,
+          index: 0,
+        }),
+      ),
+    /preset boom/,
+  );
 });

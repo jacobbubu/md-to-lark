@@ -84,7 +84,7 @@ resolve input
 
 ## 第四步：执行 preset
 
-如果用户传了 `--preset`，命令层会先加载 preset，再对当前 Markdown 执行 transform。
+如果用户传了一个或多个 `--preset`，命令层会先按顺序加载 preset，再对当前 Markdown 串行执行 transform。
 
 这一步发生得非常早，所以它会影响：
 
@@ -95,6 +95,7 @@ resolve input
 执行完之后，会把结果写到：
 
 1. `00-source/preset.md`
+2. `00-source/meta.json` 里的 `presets`
 
 ## 第五步：执行预处理
 

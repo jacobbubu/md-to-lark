@@ -137,6 +137,12 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --no-date-prefix
 npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset medium
 ```
 
+顺序组合多个 preset：
+
+```bash
+npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-format --preset ./my-preset.mjs
+```
+
 把 Mermaid 渲染成飞书白板：
 
 ```bash
