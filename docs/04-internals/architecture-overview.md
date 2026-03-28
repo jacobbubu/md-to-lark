@@ -62,7 +62,7 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 
 1. 解析输入集合
 2. 决定标题策略
-3. 选择 preset 与目标文档策略
+3. 解析 preset 链与目标文档策略
 4. 组装 publish runtime
 5. 驱动单文件执行器
 

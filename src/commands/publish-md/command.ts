@@ -1,6 +1,6 @@
 import { getPublishMdUsage, hasPublishMdHelpFlag, parsePublishMdArgs, type PublishMdCliOptions } from './args.js';
 import { resolvePublishInputSet } from './input-resolver.js';
-import { loadMarkdownPreset } from './preset-loader.js';
+import { loadMarkdownPresets } from './preset-loader.js';
 import { createDocument, listFolderChildren, normalizeDocumentId } from '../../lark/docx/ops.js';
 import { processSingleMarkdownFile } from '../../publish/process-file.js';
 import { buildPublishRuntime, logPublishRuntimeSummary } from '../../publish/runtime.js';
@@ -17,6 +17,13 @@ export interface PublishMdResult {
 }
 
 type FolderDocIndex = Map<string, string[]>;
+
+function resolveMarkdownPresetRefs(options: PublishMdCliOptions): string[] {
+  if (options.presetPaths && options.presetPaths.length > 0) {
+    return options.presetPaths.map((presetPath) => presetPath.trim()).filter(Boolean);
+  }
+  return options.presetPath?.trim() ? [options.presetPath.trim()] : [];
+}
 
 function buildFolderDocIndex(entries: Array<{ token: string; name: string; type: string }>): FolderDocIndex {
   const byTitle: FolderDocIndex = new Map();
@@ -91,12 +98,12 @@ export async function publishMdToLark(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<PublishMdResult[]> {
   const inputSet = await resolvePublishInputSet(options.inputPath);
-  const markdownPreset = await loadMarkdownPreset(options.presetPath);
+  const markdownPresets = await loadMarkdownPresets(resolveMarkdownPresetRefs(options));
   if (options.documentId && inputSet.markdownFiles.length !== 1) {
     throw new Error('--doc only supports single markdown input file.');
   }
 
-  const runtime = buildPublishRuntime(options, env, markdownPreset);
+  const runtime = buildPublishRuntime(options, env, markdownPresets);
   logPublishRuntimeSummary(runtime, inputSet.markdownFiles.length, inputSet.mode);
 
   const normalizedDocumentId = options.documentId ? normalizeDocumentId(options.documentId) : undefined;

@@ -18,6 +18,7 @@ test('parsePublishMdArgs parses --preset path', () => {
     LARK_FOLDER_TOKEN: 'fld_test_token',
   });
   assert.equal(options.presetPath, './my-preset.mjs');
+  assert.deepEqual(options.presetPaths, ['./my-preset.mjs']);
 });
 
 test('parsePublishMdArgs parses --preset built-in name', () => {
@@ -25,6 +26,18 @@ test('parsePublishMdArgs parses --preset built-in name', () => {
     LARK_FOLDER_TOKEN: 'fld_test_token',
   });
   assert.equal(options.presetPath, 'medium');
+  assert.deepEqual(options.presetPaths, ['medium']);
+});
+
+test('parsePublishMdArgs parses repeated --preset values in order', () => {
+  const options = parsePublishMdArgs(
+    ['--input', './examples/a.md', '--preset', 'zh-format', '--preset', './my-preset.mjs', '--dry-run'],
+    {
+      LARK_FOLDER_TOKEN: 'fld_test_token',
+    },
+  );
+  assert.equal(options.presetPath, undefined);
+  assert.deepEqual(options.presetPaths, ['zh-format', './my-preset.mjs']);
 });
 
 test('parsePublishMdArgs parses --document-base-url', () => {

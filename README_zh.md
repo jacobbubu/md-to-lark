@@ -23,7 +23,7 @@
 - 递归发布一个目录里的多篇 `.md`
 - 处理本地资源、远程图片和独立 URL 的发布前预处理
 - 在不真正写飞书的情况下先跑一次 dry-run，观察中间产物
-- 用 preset 在发布前统一改写 Markdown
+- 用一个或多个有顺序的 preset 在发布前统一改写 Markdown
 
 ## 快速开始
 
@@ -109,6 +109,7 @@ preset、Mermaid 和阶段产物：
 ```bash
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
+npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
 ```
@@ -173,6 +174,7 @@ npm run test:e2e:watch
 - Mermaid `text-drawing` 和 `board` 两条输出路径
 - 表格列宽启发式与数字列右对齐
 - 中文 Markdown 格式化 preset（`zh-format`）
+- CLI 和程序化调用都支持按顺序组合多个 preset
 - `00-source` 到 `05-publish` 的阶段缓存输出
 - `publishMdToLark` 的程序化调用入口
 

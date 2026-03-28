@@ -109,20 +109,25 @@ export async function processSingleMarkdownFile(
   const sourceMarkdown = await readFile(markdownPath, 'utf8');
 
   let markdown = sourceMarkdown;
-  if (runtime.markdownPreset) {
-    markdown = await runtime.markdownPreset.transform(markdown, {
+  for (let presetIndex = 0; presetIndex < runtime.markdownPresets.length; presetIndex += 1) {
+    const preset = runtime.markdownPresets[presetIndex]!;
+    markdown = await preset.transform(markdown, {
       inputPath: markdownPath,
       index,
       total: inputSet.markdownFiles.length,
       env: runtime.env,
       log: (...args: unknown[]) =>
-        console.error(`[preset ${index + 1}/${inputSet.markdownFiles.length}]`, ...args.map((arg) => String(arg))),
+        console.error(
+          `[preset ${presetIndex + 1}/${runtime.markdownPresets.length} file ${index + 1}/${inputSet.markdownFiles.length}] [${preset.displayPath}]`,
+          ...args.map((arg) => String(arg)),
+        ),
     });
   }
 
   await writeSourceStage(stagePaths, sourceMarkdown, markdown, {
     sourcePath: path.resolve(markdownPath),
-    preset: runtime.markdownPreset ? runtime.markdownPreset.displayPath : null,
+    preset: runtime.markdownPresets.length === 1 ? runtime.markdownPresets[0]!.displayPath : null,
+    presets: runtime.markdownPresets.map((preset) => preset.displayPath),
     startedAt,
   });
 

@@ -3,7 +3,11 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { listBuiltinMarkdownPresetNames, loadMarkdownPreset } from '../src/commands/publish-md/preset-loader.js';
+import {
+  listBuiltinMarkdownPresetNames,
+  loadMarkdownPreset,
+  loadMarkdownPresets,
+} from '../src/commands/publish-md/preset-loader.js';
 
 async function createTempDir(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'md-to-lark-preset-'));
@@ -12,6 +16,11 @@ async function createTempDir(): Promise<string> {
 test('loadMarkdownPreset returns null for empty preset path', async () => {
   const preset = await loadMarkdownPreset('');
   assert.equal(preset, null);
+});
+
+test('loadMarkdownPresets returns empty list for empty preset list', async () => {
+  const presets = await loadMarkdownPresets([]);
+  assert.deepEqual(presets, []);
 });
 
 test('listBuiltinMarkdownPresetNames contains current built-ins', () => {
@@ -96,6 +105,25 @@ test('loadMarkdownPreset resolves built-in zh-format aliases', async () => {
   assert.equal(b.sourcePath, 'builtin:zh-format');
   assert.equal(c.sourcePath, 'builtin:zh-format');
   assert.equal(d.sourcePath, 'builtin:zh-format');
+});
+
+test('loadMarkdownPresets resolves built-ins and local modules in order', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'suffix-preset.mjs');
+  await writeFile(
+    file,
+    ['export default function transform(markdown) {', "  return markdown + '\\nsecond';", '}', ''].join('\n'),
+    'utf8',
+  );
+
+  const presets = await loadMarkdownPresets(['zh-format', file]);
+  assert.equal(presets.length, 2);
+  assert.equal(presets[0]?.sourcePath, 'builtin:zh-format');
+  assert.equal(presets[1]?.sourcePath, file);
 });
 
 test('loadMarkdownPreset loads default function export', async (t) => {

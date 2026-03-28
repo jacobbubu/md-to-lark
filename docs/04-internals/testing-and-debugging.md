@@ -100,10 +100,11 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run
 它适合定位：
 
 1. preset 是否改错了输入
-2. 预处理是否改对了内容
-3. 标题是否按预期推导
-4. `LAST`、`BTT` 是否符合预期
-5. Mermaid、表格和本地资源 patch 是否生效
+2. 多个 preset 的执行顺序是否正确
+3. 预处理是否改对了内容
+4. 标题是否按预期推导
+5. `LAST`、`BTT` 是否符合预期
+6. Mermaid、表格和本地资源 patch 是否生效
 
 ## 阶段产物怎么用
 
@@ -118,11 +119,14 @@ dry-run 后，优先看：
 排查时一个简单顺序是：
 
 1. `05-publish/result.json`
-2. `01-prepare/prepared.md`
-3. `03-last/last.json`
-4. `04-btt/btt.json`
+2. `00-source/meta.json`
+3. `01-prepare/prepared.md`
+4. `03-last/last.json`
+5. `04-btt/btt.json`
 
 不要一上来就盯着飞书 API 报错，先确认内部阶段是不是已经偏了。
+
+如果这次用了多个 preset，优先看 `00-source/meta.json` 里的 `presets` 数组，再看 `00-source/preset.md`。
 
 ## `LAST` 相关调试
 

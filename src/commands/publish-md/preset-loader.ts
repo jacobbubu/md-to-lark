@@ -96,7 +96,7 @@ export function listBuiltinMarkdownPresetNames(): string[] {
   return Object.keys(BUILTIN_MARKDOWN_PRESETS);
 }
 
-export async function loadMarkdownPreset(rawPath?: string): Promise<LoadedMarkdownPreset | null> {
+async function loadSingleMarkdownPreset(rawPath?: string): Promise<LoadedMarkdownPreset | null> {
   const trimmed = (rawPath ?? '').trim();
   if (!trimmed) return null;
 
@@ -148,4 +148,23 @@ export async function loadMarkdownPreset(rawPath?: string): Promise<LoadedMarkdo
     displayPath: path.relative(process.cwd(), absolutePath) || absolutePath,
     transform: wrappedTransform,
   };
+}
+
+export async function loadMarkdownPresets(rawPaths?: string[]): Promise<LoadedMarkdownPreset[]> {
+  const normalized = (rawPaths ?? []).map((rawPath) => rawPath.trim()).filter(Boolean);
+  if (normalized.length === 0) return [];
+
+  const presets: LoadedMarkdownPreset[] = [];
+  for (const rawPath of normalized) {
+    const preset = await loadSingleMarkdownPreset(rawPath);
+    if (preset) {
+      presets.push(preset);
+    }
+  }
+  return presets;
+}
+
+export async function loadMarkdownPreset(rawPath?: string): Promise<LoadedMarkdownPreset | null> {
+  const presets = await loadMarkdownPresets(rawPath ? [rawPath] : []);
+  return presets[0] ?? null;
 }
