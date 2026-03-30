@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/jacobbubu/md-to-lark/compare/v1.3.1...v1.4.0) (2026-03-30)
+
+
+### Features
+
+* support resource base dir override ([#35](https://github.com/jacobbubu/md-to-lark/issues/35)) ([9d6dbcf](https://github.com/jacobbubu/md-to-lark/commit/9d6dbcfeab24bbbbe2b103ee02d72246afca82b5))
+
 ## [1.3.1](https://github.com/jacobbubu/md-to-lark/compare/v1.3.0...v1.3.1) (2026-03-28)
 
 
