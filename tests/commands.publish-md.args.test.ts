@@ -50,6 +50,16 @@ test('parsePublishMdArgs parses --document-base-url', () => {
   assert.equal(options.documentBaseUrl, 'https://li.feishu.cn');
 });
 
+test('parsePublishMdArgs parses --resource-base-dir', () => {
+  const options = parsePublishMdArgs(
+    ['--input', './examples/a.md', '--resource-base-dir', './generated-assets', '--dry-run'],
+    {
+      LARK_FOLDER_TOKEN: 'fld_test_token',
+    },
+  );
+  assert.equal(options.resourceBaseDir, './generated-assets');
+});
+
 test('parsePublishMdArgs parses positional input and --doc without folder', () => {
   const options = parsePublishMdArgs(['./examples/a.md', '--doc', 'doccn123'], {});
   assert.deepEqual(options, {
@@ -144,6 +154,7 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /--input/);
   assert.match(usage, /--preset/);
   assert.match(usage, /--document-base-url/);
+  assert.match(usage, /--resource-base-dir/);
   assert.match(usage, /--download-remote-images/);
   assert.match(usage, /--yt-dlp-path/);
   assert.match(usage, /--pipeline-cache-dir/);
@@ -155,6 +166,7 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /--help, -h/);
   assert.match(usage, /frontmatter is rewritten as fenced code block/i);
   assert.match(usage, /Missing local asset files are skipped\/degraded/i);
+  assert.match(usage, /Relative local asset paths resolve against the markdown file directory by default/i);
 });
 
 test('hasPublishMdHelpFlag detects help options', () => {

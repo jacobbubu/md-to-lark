@@ -7,6 +7,7 @@ export interface PublishMdCliOptions {
   presetPath?: string;
   presetPaths?: string[];
   documentBaseUrl?: string;
+  resourceBaseDir?: string;
   folderToken: string;
   documentId?: string;
   downloadRemoteImages?: boolean;
@@ -22,7 +23,7 @@ export interface PublishMdCliOptions {
 
 function usage(): string {
   return [
-    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
+    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--resource-base-dir <dir>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
     '',
     'Options:',
     '  --input   Markdown file path, or directory path (publish all *.md recursively).',
@@ -31,6 +32,7 @@ function usage(): string {
     '  --no-date-prefix   Disable date prefix in final title.',
     '  --preset  Optional preset module path (js/mjs/cjs/ts) or built-in name (e.g. medium). Repeatable; presets run in the given order before publish pipeline.',
     '  --document-base-url Base URL used to build documentUrl results (for example https://li.feishu.cn).',
+    '  --resource-base-dir Base directory used to resolve relative local image/file paths. Default: the current markdown file directory.',
     '  --folder  Feishu folder token. Default: LARK_FOLDER_TOKEN from .env',
     '  --doc     Existing Feishu document id (single-file only). If set, publish directly into this doc (and clear content first).',
     '  --download-remote-images    Enable prepare-stage remote image pre-download + link rewrite.',
@@ -55,12 +57,14 @@ function usage(): string {
     '  7) Prepare stage can pre-download remote markdown images and optional yt-dlp URL lines.',
     '  8) Leading YAML/TOML frontmatter is rewritten as fenced code block (yaml/toml), so it stays visible and will not be parsed as headings.',
     '  9) Missing local asset files are skipped/degraded to text fallback; publish will not fail only because a referenced local path is absent.',
+    '  10) Relative local asset paths resolve against the markdown file directory by default; use --resource-base-dir to override that base.',
     '',
     'Examples:',
     '  npm run publish:md -- --input ./docs/a.md',
     '  npm run publish:md -- --input ./docs --title Weekly --folder <token>',
     '  npm run publish:md -- --input ./docs/a.md --doc <document_id>',
     '  npm run publish:md -- --input ./docs/a.md --dry-run',
+    '  npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./original-assets --dry-run',
   ].join('\n');
 }
 
@@ -78,6 +82,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
   let titleDatePrefix: boolean | undefined;
   const presetPaths: string[] = [];
   let documentBaseUrl = '';
+  let resourceBaseDir = '';
   let folderToken = (env.LARK_FOLDER_TOKEN ?? '').trim();
   let documentId: string | undefined;
   let downloadRemoteImages: boolean | undefined;
@@ -148,6 +153,14 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
       const value = argv[i + 1];
       if (!value) throw new Error('Missing value for --document-base-url.');
       documentBaseUrl = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--resource-base-dir') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --resource-base-dir.');
+      resourceBaseDir = value;
       i += 1;
       continue;
     }
@@ -264,6 +277,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
         }
       : {}),
     ...(documentBaseUrl.trim() ? { documentBaseUrl: documentBaseUrl.trim() } : {}),
+    ...(resourceBaseDir.trim() ? { resourceBaseDir: resourceBaseDir.trim() } : {}),
     folderToken,
     ...(documentId ? { documentId: documentId.trim() } : {}),
     ...(downloadRemoteImages === undefined ? {} : { downloadRemoteImages }),

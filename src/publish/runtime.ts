@@ -68,6 +68,7 @@ export interface PublishRuntime {
   markdownPresets: LoadedMarkdownPreset[];
   markdownPreset: LoadedMarkdownPreset | null;
   documentBaseUrl: string;
+  resourceBaseDir: string | null;
   documentUrlFor: (documentId: string) => string;
   authOptions: LarkRequestOptions;
   sdkClient: lark.Client;
@@ -117,6 +118,7 @@ export function buildPublishRuntime(
       ? env.LARK_DOCUMENT_BASE_URL.trim()
       : deriveLarkDocumentBaseUrl(config.baseUrl);
   const documentBaseUrl = normalizeLarkDocumentBaseUrl(documentBaseUrlCandidate);
+  const resourceBaseDir = options.resourceBaseDir?.trim() ? path.resolve(options.resourceBaseDir.trim()) : null;
   const prepareTimeoutMs = toPositiveInt(Number((env.PREPARE_TIMEOUT_MS ?? '').trim())) ?? 15_000;
   const prepareMaxRetries = toNonNegativeInt(Number((env.PREPARE_MAX_RETRIES ?? '').trim())) ?? 3;
   const prepareBackoffBaseMs = toPositiveInt(Number((env.PREPARE_BACKOFF_BASE_MS ?? '').trim())) ?? 500;
@@ -148,6 +150,7 @@ export function buildPublishRuntime(
     markdownPresets,
     markdownPreset: markdownPresets[0] ?? null,
     documentBaseUrl,
+    resourceBaseDir,
     documentUrlFor: (documentId: string) => buildLarkDocumentUrl(documentBaseUrl, documentId),
     authOptions,
     sdkClient,
@@ -195,6 +198,9 @@ export function logPublishRuntimeSummary(
       : 'Mermaid: target=text-drawing',
   );
   console.error(`Document URL base: ${runtime.documentBaseUrl}`);
+  if (runtime.resourceBaseDir) {
+    console.error(`Local asset base override: ${runtime.resourceBaseDir}`);
+  }
   if (runtime.markdownPresets.length > 1) {
     console.error(`Presets: ${runtime.markdownPresets.map((preset) => preset.displayPath).join(' -> ')}`);
     return;

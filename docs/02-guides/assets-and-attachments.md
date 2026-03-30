@@ -40,6 +40,30 @@
 [Sample DOCX](./assets/sample.docx)
 ```
 
+如果调用方会先生成一份临时 Markdown，再把它交给 CLI 或程序化接口发布，这个默认规则就可能不够用。
+
+这时可以显式覆盖解析基目录：
+
+```bash
+npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./original-assets
+```
+
+程序化调用则传：
+
+```ts
+await publishMdToLark(
+  {
+    inputPath: './tmp/generated/article.md',
+    resourceBaseDir: './original-assets',
+    folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    dryRun: true,
+  },
+  process.env,
+)
+```
+
+这不会改变 Markdown 文件本身的位置，只会改变本地相对资源的解析基目录。
+
 ## 什么样的本地链接会被提升成附件块
 
 最稳定、最容易被识别的情况是：
@@ -155,6 +179,7 @@ dry-run 不会真的上传这些文件，但会把资源识别、块替换和 pa
 1. 路径没解析到真实文件
 2. 链接不是独立块，没满足附件提升条件
 3. 输入不是本地资源，而是远程 URL
+4. Markdown 是临时生成的，需要补 `--resource-base-dir`
 
 ## 常见误解
 

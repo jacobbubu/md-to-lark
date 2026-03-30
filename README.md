@@ -86,6 +86,8 @@ Progress logs and exceptions are written to stderr.
 - Otherwise use `LARK_DOCUMENT_BASE_URL`
 - Otherwise fall back to the current compatibility derivation from `LARK_BASE_URL`
 
+Relative local assets such as `./img-001.png` still resolve against the Markdown file directory by default. If your caller generates a temporary Markdown file elsewhere, use `--resource-base-dir` to keep local asset resolution pinned to the original content directory.
+
 ## Common Commands
 
 Basic publish:
@@ -110,6 +112,7 @@ Presets, Mermaid, and stage artifacts:
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
+npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./source-assets --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
 ```

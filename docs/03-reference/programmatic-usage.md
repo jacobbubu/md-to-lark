@@ -54,19 +54,20 @@ const results = await publishMdToLark(options, env)
 2. `folderToken`
 3. `documentId`
 4. `documentBaseUrl`
-5. `title`
-6. `titleDatePrefix`
-7. `presetPath`
-8. `presetPaths`
-9. `downloadRemoteImages`
-10. `ytDlpPath`
-11. `ytDlpCookiesPath`
-12. `pipelineCacheDir`
-13. `mermaidTarget`
-14. `mermaidBoardSyntaxType`
-15. `mermaidBoardStyleType`
-16. `mermaidBoardDiagramType`
-17. `dryRun`
+5. `resourceBaseDir`
+6. `title`
+7. `titleDatePrefix`
+8. `presetPath`
+9. `presetPaths`
+10. `downloadRemoteImages`
+11. `ytDlpPath`
+12. `ytDlpCookiesPath`
+13. `pipelineCacheDir`
+14. `mermaidTarget`
+15. `mermaidBoardSyntaxType`
+16. `mermaidBoardStyleType`
+17. `mermaidBoardDiagramType`
+18. `dryRun`
 
 这些字段和 CLI 参数大体对应。
 
@@ -96,6 +97,7 @@ const results = await publishMdToLark(
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? 'fld_demo',
     documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
+    resourceBaseDir: './test-md/comp',
     dryRun: true,
   },
   {
@@ -123,6 +125,7 @@ const results = await publishMdToLark(
     inputPath: './test-md/comp/comp.md',
     folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
     documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
+    resourceBaseDir: './test-md/comp',
     presetPaths: ['zh-format', './my-preset.mjs'],
     dryRun: false,
   },
@@ -149,6 +152,12 @@ console.log(results[0]?.documentUrl);
 
 1. `presetPaths` 里的多个 preset 会按顺序执行
 2. 如果同时传了 `presetPaths` 和 `presetPath`，优先使用 `presetPaths`
+
+`resourceBaseDir` 的规则是：
+
+1. 只影响本地相对图片和附件解析
+2. 默认不传时，仍然相对当前 Markdown 文件所在目录解析
+3. 如果你的调用方先生成临时 Markdown，再交给发布器处理，应该显式传原始资源目录
 
 ## 程序化调用和 CLI 的关系
 
