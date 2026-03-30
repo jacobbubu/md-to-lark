@@ -86,6 +86,8 @@ CLI 成功执行后会在 stdout 打印一个 JSON 数组，每项都包含：
 - 否则使用 `LARK_DOCUMENT_BASE_URL`
 - 仍未配置时，再回退到当前基于 `LARK_BASE_URL` 的兼容推导
 
+本地相对资源，例如 `./img-001.png`，默认还是相对 Markdown 文件所在目录解析。如果调用方会把临时 Markdown 写到别的目录，再交给 CLI 发布，就应该显式传 `--resource-base-dir`，把资源解析基目录固定回原始内容目录。
+
 ## 常用命令
 
 基础发布：
@@ -110,6 +112,7 @@ preset、Mermaid 和阶段产物：
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
+npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./source-assets --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
 ```

@@ -32,6 +32,7 @@ npm run publish:md -- --input <file.md|dir> \
   [--date-prefix|--no-date-prefix] \
   [--preset <preset_name_or_module_path>]... \
   [--document-base-url <base_url>] \
+  [--resource-base-dir <dir>] \
   [--folder <folder_token>] \
   [--doc <document_id>] \
   [--download-remote-images|--no-download-remote-images] \
@@ -179,6 +180,26 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 
 1. 这个参数只影响结果里的 `documentUrl`
 2. 它不影响 Open API 请求地址
+
+### `--resource-base-dir <dir>`
+
+显式指定本地相对图片和附件的解析基目录。
+
+默认值：
+
+1. 当前 Markdown 文件所在目录
+
+适用场景：
+
+1. 调用方会先生成临时 Markdown 文件
+2. 临时文件不在原始资源目录里
+3. Markdown 里仍然保留相对路径，例如 `./img-001.png`
+
+注意：
+
+1. 这个参数只影响本地相对资源解析
+2. 它不影响远程图片预处理
+3. 它不影响 `documentUrl`
 
 ## 远程资源预处理相关
 

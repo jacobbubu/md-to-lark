@@ -111,6 +111,19 @@ test('buildPublishRuntime prefers explicit document base url, then env, then der
   assert.equal(fromEnv.documentUrlFor('doccn_demo'), 'https://li.feishu.cn/docx/doccn_demo');
 });
 
+test('buildPublishRuntime normalizes resource base dir when provided', () => {
+  const runtime = buildPublishRuntime(
+    {
+      ...baseOptions,
+      resourceBaseDir: './generated-assets',
+    },
+    baseEnv,
+    [],
+  );
+
+  assert.equal(runtime.resourceBaseDir, path.resolve('./generated-assets'));
+});
+
 test('logPublishRuntimeSummary prints resolved runtime and preset lines', async () => {
   const preset: LoadedMarkdownPreset = {
     sourcePath: '/tmp/preset.mjs',
@@ -127,6 +140,7 @@ test('logPublishRuntimeSummary prints resolved runtime and preset lines', async 
   assert.ok(logs.some((line) => line.includes('Rate limits: docx=')));
   assert.ok(logs.some((line) => line.includes('Prepare: download_remote_images=')));
   assert.ok(logs.some((line) => line.includes('Mermaid: target=text-drawing')));
+  assert.ok(logs.every((line) => !line.includes('Local asset base override:')));
   assert.ok(logs.some((line) => line.includes('Preset: builtin:test-preset')));
 });
 
@@ -149,4 +163,21 @@ test('logPublishRuntimeSummary prints ordered preset chain when multiple presets
   });
 
   assert.ok(logs.some((line) => line.includes('Presets: builtin:zh-format -> ./my-preset.mjs')));
+});
+
+test('logPublishRuntimeSummary prints local asset base override when configured', async () => {
+  const runtime = buildPublishRuntime(
+    {
+      ...baseOptions,
+      resourceBaseDir: './generated-assets',
+    },
+    baseEnv,
+    [],
+  );
+
+  const { logs } = await withCapturedConsole(async () => {
+    logPublishRuntimeSummary(runtime, 1, 'single');
+  });
+
+  assert.ok(logs.some((line) => line.includes(`Local asset base override: ${path.resolve('./generated-assets')}`)));
 });

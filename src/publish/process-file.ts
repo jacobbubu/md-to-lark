@@ -107,6 +107,7 @@ export async function processSingleMarkdownFile(
   const stagePaths = buildPipelineStagePaths(runtime.pipelineCacheRootDir, markdownPath);
   const startedAt = new Date().toISOString();
   const sourceMarkdown = await readFile(markdownPath, 'utf8');
+  const resourceBaseDir = runtime.resourceBaseDir ?? path.dirname(markdownPath);
 
   let markdown = sourceMarkdown;
   for (let presetIndex = 0; presetIndex < runtime.markdownPresets.length; presetIndex += 1) {
@@ -126,6 +127,7 @@ export async function processSingleMarkdownFile(
 
   await writeSourceStage(stagePaths, sourceMarkdown, markdown, {
     sourcePath: path.resolve(markdownPath),
+    resourceBaseDir,
     preset: runtime.markdownPresets.length === 1 ? runtime.markdownPresets[0]!.displayPath : null,
     presets: runtime.markdownPresets.map((preset) => preset.displayPath),
     startedAt,
@@ -155,8 +157,7 @@ export async function processSingleMarkdownFile(
   await writeLastStage(stagePaths, last);
 
   ensureLastBlockBttIds(last);
-  const baseDir = path.dirname(markdownPath);
-  const localAssetByBlockId = applyStandaloneAttachmentTransforms(last, baseDir);
+  const localAssetByBlockId = applyStandaloneAttachmentTransforms(last, resourceBaseDir);
   applyTableColumnWidthHeuristics(last);
   const mermaidByBlockId = collectMermaidPatches(last);
 

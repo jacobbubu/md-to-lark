@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -183,4 +183,53 @@ test('processSingleMarkdownFile stops when a later preset throws', async (t) => 
       ),
     /preset boom/,
   );
+});
+
+test('processSingleMarkdownFile resolves relative local assets from resourceBaseDir override', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const generatedDir = path.join(dir, 'generated');
+  const assetsDir = path.join(dir, 'assets');
+  const file = path.join(generatedDir, 'single.md');
+  const asset = path.join(assetsDir, 'img-001.png');
+  await mkdir(generatedDir, { recursive: true });
+  await mkdir(assetsDir, { recursive: true });
+  await writeFile(file, '# Asset Base Override\n\n![sample](./img-001.png)\n', 'utf8');
+  await writeFile(asset, 'fake-png', 'utf8');
+
+  const options = {
+    inputPath: file,
+    folderToken: 'fld_test',
+    dryRun: true,
+    pipelineCacheDir: path.join(dir, 'cache'),
+    resourceBaseDir: assetsDir,
+  } as const;
+
+  const runtime = buildPublishRuntime(options, baseEnv, []);
+  const result = await withSilencedConsole(async () =>
+    processSingleMarkdownFile({
+      runtime,
+      inputSet: {
+        mode: 'single',
+        rootPath: dir,
+        markdownFiles: [file],
+      },
+      options,
+      markdownPath: file,
+      index: 0,
+    }),
+  );
+
+  const sourceMeta = JSON.parse(await readFile(path.join(result.stagePaths.sourceDir, 'meta.json'), 'utf8')) as {
+    resourceBaseDir: string;
+  };
+  const bttMeta = JSON.parse(await readFile(path.join(result.stagePaths.bttDir, 'meta.json'), 'utf8')) as {
+    localAssetCount: number;
+  };
+
+  assert.equal(sourceMeta.resourceBaseDir, assetsDir);
+  assert.equal(bttMeta.localAssetCount, 1);
 });
