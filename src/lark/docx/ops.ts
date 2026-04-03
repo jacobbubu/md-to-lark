@@ -730,6 +730,15 @@ export async function replaceImageBlock(
   documentId: string,
   blockId: string,
   imageToken: string,
+  imageOptions: {
+    width?: number;
+    height?: number;
+    align?: number;
+    caption?: {
+      content?: string;
+    };
+    scale?: number;
+  },
   authOptions: LarkRequestOptions,
   limiter: RateLimiter,
 ): Promise<void> {
@@ -746,6 +755,11 @@ export async function replaceImageBlock(
               block_id: blockId,
               replace_image: {
                 token: imageToken,
+                ...(typeof imageOptions.width === 'number' ? { width: imageOptions.width } : {}),
+                ...(typeof imageOptions.height === 'number' ? { height: imageOptions.height } : {}),
+                ...(typeof imageOptions.align === 'number' ? { align: imageOptions.align } : {}),
+                ...(imageOptions.caption ? { caption: imageOptions.caption } : {}),
+                ...(typeof imageOptions.scale === 'number' ? { scale: imageOptions.scale } : {}),
               },
             },
           ],

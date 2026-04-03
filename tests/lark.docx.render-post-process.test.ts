@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { RateLimiter } from '../src/shared/rate-limiter.js';
 import {
@@ -126,4 +129,66 @@ test('applyCreatedImageBlock returns null when raw block does not carry local im
   );
 
   assert.equal(mapping, null);
+});
+
+test('applyCreatedImageBlock preserves width and align in replace_image request', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'md-to-lark-render-post-process-'));
+  const localPath = path.join(tempDir, 'image.png');
+  await writeFile(localPath, 'png', 'utf8');
+  const batchUpdateCalls: unknown[] = [];
+  const uploadCalls: unknown[] = [];
+  const client = {
+    drive: {
+      media: {
+        uploadAll: async (request: unknown) => {
+          uploadCalls.push(request);
+          return {
+            code: 0,
+            file_token: 'img_uploaded_token',
+          };
+        },
+      },
+    },
+    docx: {
+      documentBlock: {
+        batchUpdate: async (request: unknown) => {
+          batchUpdateCalls.push(request);
+          return { code: 0, data: {} };
+        },
+      },
+    },
+  };
+
+  const mapping = await applyCreatedImageBlock(
+    client as never,
+    'doc_id',
+    'block_id',
+    'source_image',
+    {
+      image: {
+        local_path: localPath,
+        width: 1000,
+        align: 1,
+      },
+    },
+    undefined,
+    new RateLimiter(0),
+    new RateLimiter(0),
+  );
+
+  assert.equal(uploadCalls.length, 1);
+  assert.deepEqual(mapping, {
+    kind: 'image',
+    sourceBlockId: 'source_image',
+    createdBlockId: 'block_id',
+    localPath,
+    token: 'img_uploaded_token',
+  });
+  const request = batchUpdateCalls[0] as {
+    data?: { requests?: Array<{ replace_image?: { token?: string; width?: number; align?: number } }> };
+  };
+  assert.equal(request.data?.requests?.[0]?.replace_image?.token, 'img_uploaded_token');
+  assert.equal(request.data?.requests?.[0]?.replace_image?.width, 1000);
+  assert.equal(request.data?.requests?.[0]?.replace_image?.align, 1);
+  await rm(tempDir, { recursive: true, force: true });
 });

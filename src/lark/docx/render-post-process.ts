@@ -64,16 +64,23 @@ export async function applyCreatedImageBlock(
   const image = toObjectRecord(rawBlockRecord.image);
   const localPath = image && typeof image.local_path === 'string' ? image.local_path : '';
   if (!localPath) return null;
+  const replaceOptions = {
+    ...(image && typeof image.width === 'number' ? { width: image.width } : {}),
+    ...(image && typeof image.height === 'number' ? { height: image.height } : {}),
+    ...(image && typeof image.align === 'number' ? { align: image.align } : {}),
+    ...(image && toObjectRecord(image.caption) ? { caption: toObjectRecord(image.caption) as { content?: string } } : {}),
+    ...(image && typeof image.scale === 'number' ? { scale: image.scale } : {}),
+  };
 
   let imageToken = await uploadBinaryToNode(client, 'docx_image', createdBlockId, localPath, authOptions, mediaLimiter);
   try {
-    await replaceImageBlock(client, documentId, createdBlockId, imageToken, authOptions, docxLimiter);
+    await replaceImageBlock(client, documentId, createdBlockId, imageToken, replaceOptions, authOptions, docxLimiter);
   } catch (error) {
     if (!isRelationMismatchError(error)) {
       throw error;
     }
     imageToken = await uploadBinaryToNode(client, 'docx_image', createdBlockId, localPath, authOptions, mediaLimiter);
-    await replaceImageBlock(client, documentId, createdBlockId, imageToken, authOptions, docxLimiter);
+    await replaceImageBlock(client, documentId, createdBlockId, imageToken, replaceOptions, authOptions, docxLimiter);
   }
 
   return {

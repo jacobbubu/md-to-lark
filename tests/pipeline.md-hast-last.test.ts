@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import type { Root as HastRoot } from 'hast';
+import { DEFAULT_IMAGE_WIDTH, DEFAULT_TABLE_CELL_IMAGE_WIDTH } from '../src/last/image-defaults.js';
 import { hastToLAST, markdownToHast } from '../src/pipeline/index.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -256,6 +257,22 @@ test('hastToLAST table cell converts standalone image/link-to-iframe into rich b
   assert.ok(iframeChild && iframeChild.type === 'iframe');
   if (!imageChild || imageChild.type !== 'image' || !iframeChild || iframeChild.type !== 'iframe') return;
   assert.equal(imageChild.selector?.attrs?.sourceUrl, './assets/tiny.png');
+  assert.equal(imageChild.payload.width, DEFAULT_TABLE_CELL_IMAGE_WIDTH);
+  assert.equal(imageChild.payload.height, undefined);
   assert.equal(iframeChild.payload.component.iframeType, 'bilibili');
   assert.equal(iframeChild.payload.component.url, 'https://www.bilibili.com/video/BV1GJ411x7h7');
+});
+
+test('hastToLAST gives standalone paragraph images a non-zero default width', async () => {
+  const markdown = '![tiny](./assets/tiny.png)\n';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'image-default-width' });
+
+  const imageId = last.indexes.byType.image?.[0];
+  assert.ok(imageId, 'expected one image block');
+  const image = imageId ? last.blocks[imageId] : undefined;
+  assert.ok(image && image.type === 'image');
+  if (!image || image.type !== 'image') return;
+  assert.equal(image.payload.width, DEFAULT_IMAGE_WIDTH);
+  assert.equal(image.payload.height, undefined);
 });

@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { markdownToHast, hastToLAST } from '../src/pipeline/index.js';
 import { convertLASTToBTT } from '../src/interop/index.js';
+import { DEFAULT_IMAGE_WIDTH } from '../src/last/image-defaults.js';
 import type { LASTBlockNode, LASTTextualBlock, LASTTextualBlockType } from '../src/last/types.js';
 import {
   applyStandaloneAttachmentTransforms,
@@ -183,6 +184,28 @@ test('applyStandaloneAttachmentTransforms converts split markdown-link text runs
       .filter((b) => b.type === 'file')
       .map((b) => b.id);
     assert.equal(fileIds.length, 1);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('applyStandaloneAttachmentTransforms converts existing local image links to image blocks with default width', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'md-to-lark-image-exists-'));
+  try {
+    const assetsDir = path.join(tempDir, 'assets');
+    await mkdir(assetsDir, { recursive: true });
+    await writeFile(path.join(assetsDir, 'tiny.png'), 'png', 'utf8');
+
+    const markdown = '[tiny](./assets/tiny.png)';
+    const hast = await markdownToHast(markdown);
+    const last = hastToLAST(hast, { mode: 'fragment', documentId: 'existing-image' });
+    const assets = applyStandaloneAttachmentTransforms(last, tempDir);
+    assert.equal(assets.size, 1);
+    const image = Object.values(last.blocks).find((block) => block.type === 'image');
+    assert.ok(image && image.type === 'image');
+    if (!image || image.type !== 'image') return;
+    assert.equal(image.payload.width, DEFAULT_IMAGE_WIDTH);
+    assert.equal(image.payload.height, undefined);
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

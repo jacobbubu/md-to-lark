@@ -22,6 +22,7 @@ import type {
   LASTTextualBlock,
   LASTTextualBlockType,
 } from '../last/types.js';
+import { createDefaultImagePayload } from '../last/image-defaults.js';
 import { LAST_TEXTUAL_BLOCK_TYPE_SET } from '../last/textual-block-types.js';
 
 interface ConversionContext {
@@ -199,17 +200,13 @@ function createDividerBlock(ctx: ConversionContext, parentId: LASTBlockId): LAST
 
 function createImageBlock(ctx: ConversionContext, parentId: LASTBlockId, sourceUrl: string | null): LASTBlockId {
   const blockId = nextBlockId(ctx);
+  const parentBlock = ctx.blocks[parentId];
   const blockBase: Extract<LASTBlockNode, { type: 'image' }> = {
     id: blockId,
     type: 'image',
     parentId,
     children: [],
-    payload: {
-      width: 0,
-      height: 0,
-      token: '',
-      align: 'left',
-    },
+    payload: createDefaultImagePayload(parentBlock?.type),
   };
 
   if (sourceUrl) {

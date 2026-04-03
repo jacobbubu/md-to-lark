@@ -34,6 +34,7 @@
 - `lark.docx.render-payload.test.ts`
 - `lark.docx.render-post-process.test.ts`
 - `lark.docx.render-table.test.ts`
+- `publish.image-width.live.test.ts`
 
 `shared.*.test.ts`：共享基础能力
 - `shared.retry.test.ts`
