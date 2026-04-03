@@ -20,7 +20,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const sampleImagePath = path.resolve(currentDir, '../test-md/comp/assets/medium.png');
 const execFile = promisify(execFileCallback);
 
-test('live publish keeps default width on top-level image blocks', async (t) => {
+test('live publish keeps proportional size on top-level image blocks', async (t) => {
   const live = await loadLiveE2EConfig();
   if (!live) {
     return t.skip(getLiveE2ESkipReason());
@@ -75,4 +75,5 @@ test('live publish keeps default width on top-level image blocks', async (t) => 
 
   const imagePayload = imageBlocks[0]?.image as { width?: unknown; height?: unknown } | undefined;
   assert.equal(imagePayload?.width, DEFAULT_IMAGE_WIDTH);
+  assert.equal(imagePayload?.height, 750);
 });

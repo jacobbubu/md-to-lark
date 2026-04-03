@@ -1,5 +1,6 @@
 import * as lark from '@larksuiteoapi/node-sdk';
 import { RateLimiter } from '../../shared/rate-limiter.js';
+import { getScaledHeightForLocalImage } from '../../shared/image-metadata.js';
 import {
   createBoardPlantumlNode,
   getDocumentBlockById,
@@ -64,9 +65,12 @@ export async function applyCreatedImageBlock(
   const image = toObjectRecord(rawBlockRecord.image);
   const localPath = image && typeof image.local_path === 'string' ? image.local_path : '';
   if (!localPath) return null;
+  const width = image && typeof image.width === 'number' && image.width > 0 ? image.width : undefined;
+  const explicitHeight = image && typeof image.height === 'number' && image.height > 0 ? image.height : undefined;
+  const proportionalHeight = explicitHeight ?? getScaledHeightForLocalImage(localPath, width);
   const replaceOptions = {
-    ...(image && typeof image.width === 'number' ? { width: image.width } : {}),
-    ...(image && typeof image.height === 'number' ? { height: image.height } : {}),
+    ...(typeof width === 'number' ? { width } : {}),
+    ...(typeof proportionalHeight === 'number' ? { height: proportionalHeight } : {}),
     ...(image && typeof image.align === 'number' ? { align: image.align } : {}),
     ...(image && toObjectRecord(image.caption) ? { caption: toObjectRecord(image.caption) as { content?: string } } : {}),
     ...(image && typeof image.scale === 'number' ? { scale: image.scale } : {}),
