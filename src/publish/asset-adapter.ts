@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { createDefaultImagePayload } from '../last/image-defaults.js';
 import type { LASTBlockNode, LASTModel } from '../last/types.js';
 import {
   createDefaultMarks,
@@ -51,18 +52,14 @@ export function applyStandaloneAttachmentTransforms(last: LASTModel, baseDir: st
     const fileName = displayName.length > 0 ? displayName : path.basename(stripQueryAndHash(linkUrl));
 
     if (mediaKind === 'image') {
+      const parentBlock = block.parentId ? last.blocks[block.parentId] : undefined;
       const transformed: Extract<LASTBlockNode, { type: 'image' }> = {
         id: block.id,
         ...(block.bttId ? { bttId: block.bttId } : {}),
         type: 'image',
         parentId: block.parentId,
         children: [],
-        payload: {
-          width: 0,
-          height: 0,
-          token: '',
-          align: 'left',
-        },
+        payload: createDefaultImagePayload(parentBlock?.type),
         selector: {
           attrs: {
             sourceUrl: linkUrl,

@@ -52,6 +52,19 @@ test('buildCreatePayloadFromRawBlock sanitizes links, file fields, and table pay
   });
   assert.deepEqual(filePayload?.file, { view_type: 2 });
 
+  const imagePayload = buildCreatePayloadFromRawBlock({
+    block_id: 'b_image',
+    block_type: 27,
+    image: {
+      local_path: '/tmp/a.png',
+      token: '',
+      width: 1000,
+      height: 0,
+      align: 1,
+    },
+  });
+  assert.deepEqual(imagePayload?.image, { width: 1000, align: 1 });
+
   const tablePayload = buildCreatePayloadFromRawBlock({
     block_id: 'b_table',
     block_type: 31,

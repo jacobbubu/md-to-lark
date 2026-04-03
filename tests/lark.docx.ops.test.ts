@@ -613,7 +613,18 @@ test('patchTextBlockElements replaceImageBlock replaceFileBlock and getDocumentB
     new RateLimiter(0),
     3,
   );
-  await replaceImageBlock(client, 'doc_x', 'b_1', 'img_token', undefined, new RateLimiter(0));
+  await replaceImageBlock(
+    client,
+    'doc_x',
+    'b_1',
+    'img_token',
+    {
+      width: 1000,
+      align: 1,
+    },
+    undefined,
+    new RateLimiter(0),
+  );
   await replaceFileBlock(client, 'doc_x', 'b_1', 'file_token', undefined, new RateLimiter(0));
   const block = await getDocumentBlockById(client, 'doc_x', 'b_1', undefined, new RateLimiter(0));
 
@@ -633,6 +644,16 @@ test('patchTextBlockElements replaceImageBlock replaceFileBlock and getDocumentB
     }),
   );
   assert.ok(calls.filter((row) => row.method === 'docx.documentBlock.batchUpdate').length >= 2);
+  assert.ok(
+    calls.some((row) => {
+      if (row.method !== 'docx.documentBlock.batchUpdate') return false;
+      const request = row.request as {
+        data?: { requests?: Array<{ replace_image?: { token?: string; width?: number; align?: number } }> };
+      };
+      const replaceImage = request.data?.requests?.[0]?.replace_image;
+      return replaceImage?.token === 'img_token' && replaceImage.width === 1000 && replaceImage.align === 1;
+    }),
+  );
   assert.ok(calls.some((row) => row.method === 'docx.documentBlock.get'));
 });
 
