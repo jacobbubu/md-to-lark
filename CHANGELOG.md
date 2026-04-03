@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/jacobbubu/md-to-lark/compare/v1.4.1...v1.4.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* stop semantic-release success from resolving gitlab issues ([#39](https://github.com/jacobbubu/md-to-lark/issues/39)) ([6ca8038](https://github.com/jacobbubu/md-to-lark/commit/6ca80381b3a1c07639c6f9c62657a298c4bac735))
+
 ## [1.4.1](https://github.com/jacobbubu/md-to-lark/compare/v1.4.0...v1.4.1) (2026-04-03)
 
 
