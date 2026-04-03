@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/jacobbubu/md-to-lark/compare/v1.4.2...v1.4.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* scale image height from target width ([#40](https://github.com/jacobbubu/md-to-lark/issues/40)) ([2c65321](https://github.com/jacobbubu/md-to-lark/commit/2c65321539cbd4f679faf36d20d81493110a1e53))
+
 ## [1.4.2](https://github.com/jacobbubu/md-to-lark/compare/v1.4.1...v1.4.2) (2026-04-03)
 
 
