@@ -133,8 +133,12 @@ test('applyCreatedImageBlock returns null when raw block does not carry local im
 
 test('applyCreatedImageBlock preserves width and align in replace_image request', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'md-to-lark-render-post-process-'));
-  const localPath = path.join(tempDir, 'image.png');
-  await writeFile(localPath, 'png', 'utf8');
+  const localPath = path.join(tempDir, 'image.svg');
+  await writeFile(
+    localPath,
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200"></svg>',
+    'utf8',
+  );
   const batchUpdateCalls: unknown[] = [];
   const uploadCalls: unknown[] = [];
   const client = {
@@ -185,10 +189,11 @@ test('applyCreatedImageBlock preserves width and align in replace_image request'
     token: 'img_uploaded_token',
   });
   const request = batchUpdateCalls[0] as {
-    data?: { requests?: Array<{ replace_image?: { token?: string; width?: number; align?: number } }> };
+    data?: { requests?: Array<{ replace_image?: { token?: string; width?: number; height?: number; align?: number } }> };
   };
   assert.equal(request.data?.requests?.[0]?.replace_image?.token, 'img_uploaded_token');
   assert.equal(request.data?.requests?.[0]?.replace_image?.width, 1000);
+  assert.equal(request.data?.requests?.[0]?.replace_image?.height, 750);
   assert.equal(request.data?.requests?.[0]?.replace_image?.align, 1);
   await rm(tempDir, { recursive: true, force: true });
 });
