@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/jacobbubu/md-to-lark/compare/v1.4.0...v1.4.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* preserve image width on Feishu upload ([#36](https://github.com/jacobbubu/md-to-lark/issues/36)) ([e982e26](https://github.com/jacobbubu/md-to-lark/commit/e982e260fa408d91cfeaf160493382ee2431fad7))
+
 # [1.4.0](https://github.com/jacobbubu/md-to-lark/compare/v1.3.1...v1.4.0) (2026-03-30)
 
 

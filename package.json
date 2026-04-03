@@ -1,6 +1,6 @@
 {
   "name": "@jacobbubu/md-to-lark",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Publish Markdown to Feishu docs with a stable pipeline.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
