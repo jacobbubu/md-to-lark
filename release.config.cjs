@@ -25,6 +25,10 @@ module.exports = {
       '@semantic-release/github',
       {
         assets: [{ path: 'release-artifacts/*.tgz', label: 'npm package tarball' }],
+        // Commit messages in this repo reference GitLab issues like "(#36)".
+        // GitHub success hooks would try to resolve those as GitHub issues/PRs and fail.
+        successCommentCondition: false,
+        releasedLabels: false,
       },
     ],
     [
