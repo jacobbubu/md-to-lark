@@ -1,3 +1,10 @@
+## [1.4.4](https://github.com/jacobbubu/md-to-lark/compare/v1.4.3...v1.4.4) (2026-04-14)
+
+
+### Bug Fixes
+
+* ignore fragment links in attachment transform ([#41](https://github.com/jacobbubu/md-to-lark/issues/41)) ([f33f3ca](https://github.com/jacobbubu/md-to-lark/commit/f33f3ca42beb29c32696526522194650ed06b925))
+
 ## [1.4.3](https://github.com/jacobbubu/md-to-lark/compare/v1.4.2...v1.4.3) (2026-04-03)
 
 
