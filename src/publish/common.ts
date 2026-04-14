@@ -54,6 +54,9 @@ export function isHttpLike(url: string): boolean {
 export function resolveLocalPathFromSource(sourceUrl: string, baseDir: string): string | null {
   const raw = sourceUrl.trim();
   if (!raw) return null;
+  if (raw.startsWith('#')) {
+    return null;
+  }
   if (isHttpLike(raw)) {
     if (/^https?:/i.test(raw)) {
       return null;
@@ -62,6 +65,9 @@ export function resolveLocalPathFromSource(sourceUrl: string, baseDir: string): 
   }
 
   const decoded = safeDecodeURIComponent(stripQueryAndHash(raw));
+  if (!decoded.trim()) {
+    return null;
+  }
   const absolute = path.isAbsolute(decoded) ? decoded : path.resolve(baseDir, decoded);
   return absolute;
 }

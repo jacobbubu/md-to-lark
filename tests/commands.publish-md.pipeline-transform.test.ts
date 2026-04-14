@@ -14,6 +14,7 @@ import {
   ensureLastBlockBttIds,
   patchBTTForMermaidAndAssets,
 } from '../src/commands/publish-md/pipeline-transform.js';
+import { resolveLocalPathFromSource } from '../src/publish/common.js';
 
 function isTextualBlock(block: LASTBlockNode): block is LASTTextualBlock<LASTTextualBlockType> {
   return (
@@ -147,6 +148,10 @@ test('applyStandaloneAttachmentTransforms skips missing local file links', async
   }
 });
 
+test('resolveLocalPathFromSource ignores fragment-only links', () => {
+  assert.equal(resolveLocalPathFromSource('#wbk-023-全局壳层shell', '/tmp/work'), null);
+});
+
 test('applyStandaloneAttachmentTransforms converts existing local file links to file blocks', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'md-to-lark-asset-exists-'));
   try {
@@ -166,6 +171,25 @@ test('applyStandaloneAttachmentTransforms converts existing local file links to 
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
+});
+
+test('applyStandaloneAttachmentTransforms keeps fragment-only links as normal text links', async () => {
+  const markdown = '[§3 全局壳层](#wbk-023-全局壳层shell)';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'fragment-link' });
+
+  const assets = applyStandaloneAttachmentTransforms(last, '/tmp');
+
+  assert.equal(assets.size, 0);
+  const textBlock = Object.values(last.blocks).find((block) => block.type === 'text');
+  assert.ok(textBlock && textBlock.type === 'text');
+  if (!textBlock || textBlock.type !== 'text') return;
+  assert.equal(textBlock.payload.inlines.length, 1);
+  const firstInline = textBlock.payload.inlines[0];
+  assert.ok(firstInline && firstInline.kind === 'text_run');
+  if (!firstInline || firstInline.kind !== 'text_run') return;
+  assert.equal(firstInline.text, '§3 全局壳层');
+  assert.equal(decodeURIComponent(firstInline.marks.link?.url ?? ''), '#wbk-023-全局壳层shell');
 });
 
 test('applyStandaloneAttachmentTransforms converts split markdown-link text runs with same href', async () => {
