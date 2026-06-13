@@ -61,7 +61,8 @@
 
 ## Fixture 约定
 
-- 公共 markdown fixture 目前仅有 `tests/fixtures/md/rich-gfm.md`，用于转换链路的确定性回归。
+- `tests/fixtures/md/rich-gfm.md`：用于转换链路的确定性回归。
+- `tests/fixtures/md/unitree-article-verification.md`：保留 Unitree 长文原文，用于复现和验证中文加粗、链接、引用等真实文章格式问题。
 - 默认优先使用内联字符串构造输入；不稳定外部输入应在临时目录（`mkdtemp`）内创建并清理。
 - 与发布顺序相关的文件名约定由断言驱动，不要求固定文件名，但推荐语义化文件名（如 `single.md`、`sample.md`）以便定位。
 
