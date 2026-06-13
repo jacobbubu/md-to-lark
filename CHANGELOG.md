@@ -1,3 +1,10 @@
+## [1.4.6](https://github.com/jacobbubu/md-to-lark/compare/v1.4.5...v1.4.6) (2026-06-13)
+
+
+### Bug Fixes
+
+* normalize chinese bold punctuation before parse ([#46](https://github.com/jacobbubu/md-to-lark/issues/46)) ([1551b89](https://github.com/jacobbubu/md-to-lark/commit/1551b891171fc12e231405f26ad09bbde3e62656))
+
 ## [1.4.5](https://github.com/jacobbubu/md-to-lark/compare/v1.4.4...v1.4.5) (2026-06-13)
 
 
