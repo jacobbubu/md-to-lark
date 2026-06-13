@@ -1,3 +1,10 @@
+## [1.4.8](https://github.com/jacobbubu/md-to-lark/compare/v1.4.7...v1.4.8) (2026-06-13)
+
+
+### Bug Fixes
+
+* normalize bold adjacent to chinese text ([#48](https://github.com/jacobbubu/md-to-lark/issues/48)) ([01168c2](https://github.com/jacobbubu/md-to-lark/commit/01168c21119f943dd33cdfab30ebac4de339339a))
+
 ## [1.4.7](https://github.com/jacobbubu/md-to-lark/compare/v1.4.6...v1.4.7) (2026-06-13)
 
 
