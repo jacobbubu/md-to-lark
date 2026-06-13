@@ -1,3 +1,10 @@
+## [1.4.5](https://github.com/jacobbubu/md-to-lark/compare/v1.4.4...v1.4.5) (2026-06-13)
+
+
+### Bug Fixes
+
+* disable single-dollar math parsing by default ([#44](https://github.com/jacobbubu/md-to-lark/issues/44)) ([0b27534](https://github.com/jacobbubu/md-to-lark/commit/0b275344328ee2578334cc02fb5e08562763cef5))
+
 ## [1.4.4](https://github.com/jacobbubu/md-to-lark/compare/v1.4.3...v1.4.4) (2026-04-14)
 
 
