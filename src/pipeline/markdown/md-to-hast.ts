@@ -31,7 +31,7 @@ export async function markdownToHast(markdown: string): Promise<HastRoot> {
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
-    .use(remarkMath)
+    .use(remarkMath, { singleDollarTextMath: false })
     .use(remarkRehype, { allowDangerousHtml: false });
 
   const mdast = processor.parse(content);

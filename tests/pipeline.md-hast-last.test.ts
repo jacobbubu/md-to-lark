@@ -181,7 +181,7 @@ test('hastToLAST code block trims exactly one trailing newline', async () => {
 });
 
 test('markdownToHast + hastToLAST maps KaTeX inline/display math to equation inlines', async () => {
-  const markdown = ['Inline formula $a^2 + b^2 = c^2$ in sentence.', '', '$$', 'E = mc^2', '$$', ''].join('\n');
+  const markdown = ['Inline formula $$a^2 + b^2 = c^2$$ in sentence.', '', '$$', 'E = mc^2', '$$', ''].join('\n');
   const hast = await markdownToHast(markdown);
   const last = hastToLAST(hast, { mode: 'fragment', documentId: 'katex' });
 
@@ -206,6 +206,25 @@ test('markdownToHast + hastToLAST maps KaTeX inline/display math to equation inl
 
   assert.equal(hasInlineMathSentence, true);
   assert.deepEqual(equations, ['a^2 + b^2 = c^2', 'E = mc^2']);
+});
+
+test('markdownToHast keeps currency amounts as plain text when single-dollar math is disabled', async () => {
+  const markdown = '美国政府以每股 $20.47 持有最多 4.33 亿股 Intel 股票，SoftBank 的入场价是 $23.00。';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'currency' });
+
+  const textIds = last.indexes.byType.text ?? [];
+  assert.equal(textIds.length, 1);
+  const block = textIds[0] ? last.blocks[textIds[0]] : undefined;
+  assert.ok(block && block.type === 'text');
+  if (!block || block.type !== 'text') return;
+
+  const kinds = block.payload.inlines.map((inline) => inline.kind);
+  assert.deepEqual(kinds, ['text_run']);
+  const text = block.payload.inlines
+    .map((inline) => ('text' in inline && typeof inline.text === 'string' ? inline.text : ''))
+    .join('');
+  assert.equal(text, markdown);
 });
 
 test('hastToLAST converts standalone supported links into iframe blocks', async () => {
