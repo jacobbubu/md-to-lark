@@ -1,3 +1,10 @@
+## [1.4.10](https://github.com/jacobbubu/md-to-lark/compare/v1.4.9...v1.4.10) (2026-06-13)
+
+
+### Bug Fixes
+
+* preserve valid cjk bold spans during normalization ([#54](https://github.com/jacobbubu/md-to-lark/issues/54)) ([b8a51d2](https://github.com/jacobbubu/md-to-lark/commit/b8a51d2833b3d8ad63c66f232751334b6e830c15))
+
 ## [1.4.9](https://github.com/jacobbubu/md-to-lark/compare/v1.4.8...v1.4.9) (2026-06-13)
 
 
