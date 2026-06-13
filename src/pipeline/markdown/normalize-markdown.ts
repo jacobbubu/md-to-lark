@@ -16,6 +16,25 @@ interface TextEdit {
   replacement: string;
 }
 
+interface StrongRange {
+  start: number;
+  end: number;
+}
+
+type MarkdownTree = {
+  type?: string;
+  value?: unknown;
+  children?: unknown[];
+  position?: {
+    start?: { offset?: number };
+    end?: { offset?: number };
+  };
+};
+
+function parseMarkdown(markdown: string): MarkdownTree {
+  return unified().use(remarkParse).parse(markdown) as MarkdownTree;
+}
+
 function mergeProtectedRanges(ranges: ProtectedRange[]): ProtectedRange[] {
   const sorted = [...ranges].sort((a, b) => a.start - b.start || a.end - b.end);
   const merged: ProtectedRange[] = [];
@@ -33,14 +52,7 @@ function mergeProtectedRanges(ranges: ProtectedRange[]): ProtectedRange[] {
 }
 
 function collectProtectedRanges(markdown: string): ProtectedRange[] {
-  const tree = unified().use(remarkParse).parse(markdown) as {
-    type?: string;
-    children?: unknown[];
-    position?: {
-      start?: { offset?: number };
-      end?: { offset?: number };
-    };
-  };
+  const tree = parseMarkdown(markdown);
   const ranges: ProtectedRange[] = [];
 
   const visit = (node: unknown): void => {
@@ -76,19 +88,105 @@ function collectProtectedRanges(markdown: string): ProtectedRange[] {
   return mergeProtectedRanges(ranges);
 }
 
-function collectCjkBoldNormalizationEdits(segment: string, baseOffset: number): TextEdit[] {
+function collectParsedStrongRanges(markdown: string): StrongRange[] {
+  const tree = parseMarkdown(markdown);
+  const ranges: StrongRange[] = [];
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    const record = node as MarkdownTree;
+
+    const start = record.position?.start?.offset;
+    const end = record.position?.end?.offset;
+    if (record.type === 'strong' && typeof start === 'number' && typeof end === 'number' && end > start) {
+      const raw = markdown.slice(start, end);
+      if (raw.startsWith('**') && raw.endsWith('**')) {
+        ranges.push({ start, end });
+      }
+    }
+
+    for (const child of record.children ?? []) {
+      visit(child);
+    }
+  };
+
+  visit(tree);
+  return ranges.sort((a, b) => a.start - b.start || a.end - b.end);
+}
+
+function canDelimiterCloseCjkBoldCandidate(
+  markdown: string,
+  close: number,
+  blockedOpeningOffsets: ReadonlySet<number>,
+): boolean {
+  const punctuation = markdown[close - 1] ?? '';
+  const nextChar = markdown[close + 2] ?? '';
+  if (!CJK_BOLD_TRAILING_PUNCTUATION.has(punctuation) || !NORMALIZATION_NEXT_CHAR_RE.test(nextChar)) {
+    return false;
+  }
+
+  let searchFrom = close - 1;
+  while (searchFrom >= 0) {
+    const open = markdown.lastIndexOf('**', searchFrom);
+    if (open === -1) return false;
+    if (blockedOpeningOffsets.has(open) || (open > 0 && markdown[open - 1] === '*')) {
+      searchFrom = open - 1;
+      continue;
+    }
+
+    const rawContent = markdown.slice(open + 2, close);
+    if (rawContent.includes('\n')) {
+      return false;
+    }
+    if (rawContent.includes('**')) {
+      searchFrom = open - 1;
+      continue;
+    }
+
+    const firstContentChar = markdown[open + 2] ?? '';
+    const content = markdown.slice(open + 2, close - 1);
+    return Boolean(
+      content &&
+      firstContentChar &&
+      !/\s/u.test(firstContentChar) &&
+      !CJK_BOLD_TRAILING_PUNCTUATION.has(firstContentChar),
+    );
+  }
+
+  return false;
+}
+
+function collectTrustedStrongClosingDelimiters(markdown: string): Set<number> {
+  const trustedClosingDelimiters = new Set<number>();
+
+  for (const range of collectParsedStrongRanges(markdown)) {
+    if (canDelimiterCloseCjkBoldCandidate(markdown, range.start, trustedClosingDelimiters)) {
+      continue;
+    }
+    trustedClosingDelimiters.add(range.end - 2);
+  }
+
+  return trustedClosingDelimiters;
+}
+
+function collectCjkBoldNormalizationEdits(
+  segment: string,
+  baseOffset: number,
+  blockedOpeningOffsets: ReadonlySet<number>,
+): TextEdit[] {
   const edits: TextEdit[] = [];
   let cursor = 0;
 
   while (cursor < segment.length - 1) {
     const open = segment.indexOf('**', cursor);
     if (open === -1) break;
-    if (open > 0 && segment[open - 1] === '*') {
+    const absoluteOpen = baseOffset + open;
+    if (blockedOpeningOffsets.has(absoluteOpen) || (open > 0 && segment[open - 1] === '*')) {
       cursor = open + 2;
       continue;
     }
     const firstContentChar = segment[open + 2] ?? '';
-    if (!firstContentChar || /\s/u.test(firstContentChar)) {
+    if (!firstContentChar || /\s/u.test(firstContentChar) || CJK_BOLD_TRAILING_PUNCTUATION.has(firstContentChar)) {
       cursor = open + 2;
       continue;
     }
@@ -160,18 +258,25 @@ export function rewriteLeadingFrontmatterAsCodeFence(markdown: string): string {
 
 export function normalizeChineseBoldClosingPunctuation(markdown: string): string {
   const protectedRanges = collectProtectedRanges(markdown);
+  const trustedStrongClosingDelimiters = collectTrustedStrongClosingDelimiters(markdown);
   const edits: TextEdit[] = [];
   let cursor = 0;
 
   for (const range of protectedRanges) {
     if (cursor < range.start) {
-      edits.push(...collectCjkBoldNormalizationEdits(markdown.slice(cursor, range.start), cursor));
+      edits.push(
+        ...collectCjkBoldNormalizationEdits(
+          markdown.slice(cursor, range.start),
+          cursor,
+          trustedStrongClosingDelimiters,
+        ),
+      );
     }
     cursor = Math.max(cursor, range.end);
   }
 
   if (cursor < markdown.length) {
-    edits.push(...collectCjkBoldNormalizationEdits(markdown.slice(cursor), cursor));
+    edits.push(...collectCjkBoldNormalizationEdits(markdown.slice(cursor), cursor, trustedStrongClosingDelimiters));
   }
 
   return applyTextEdits(markdown, edits);
