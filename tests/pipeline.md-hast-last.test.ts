@@ -11,6 +11,22 @@ import { convertLASTToBTT } from '../src/interop/index.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const richFixturePath = path.join(currentDir, 'fixtures', 'md', 'rich-gfm.md');
+const unitreeFixturePath = path.join(currentDir, 'fixtures', 'md', 'unitree-article-verification.md');
+const TEST_CJK_BOLD_TRAILING_PUNCTUATION = new Set([
+  '，',
+  '。',
+  '；',
+  '：',
+  '！',
+  '？',
+  '、',
+  '）',
+  '》',
+  '】',
+  '」',
+  '』',
+]);
+const TEST_NORMALIZATION_NEXT_CHAR_RE = /[\p{Script=Han}\p{Letter}\p{Number}\[]/u;
 
 function collectTextNodeValues(node: unknown): string[] {
   if (!node || typeof node !== 'object') return [];
@@ -32,6 +48,104 @@ function hasTagName(node: unknown, tagName: string): boolean {
     return true;
   }
   return (record.children ?? []).some((child) => hasTagName(child, tagName));
+}
+
+function markdownInlineToPlainText(markdown: string): string {
+  return markdown.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+}
+
+function collectSourceBoldIntentTexts(markdown: string): string[] {
+  const texts: string[] = [];
+  let cursor = 0;
+
+  while (cursor < markdown.length - 1) {
+    const open = markdown.indexOf('**', cursor);
+    if (open === -1) break;
+    const close = markdown.indexOf('**', open + 2);
+    if (close === -1) break;
+
+    let content = markdown.slice(open + 2, close);
+    if (content && !content.includes('\n')) {
+      const punctuation = content[content.length - 1] ?? '';
+      const nextChar = markdown[close + 2] ?? '';
+      if (TEST_CJK_BOLD_TRAILING_PUNCTUATION.has(punctuation) && TEST_NORMALIZATION_NEXT_CHAR_RE.test(nextChar)) {
+        content = content.slice(0, -1);
+      }
+      texts.push(markdownInlineToPlainText(content));
+    }
+
+    cursor = close + 2;
+  }
+
+  return texts;
+}
+
+function omitBlockquoteLines(markdown: string): string {
+  return markdown
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('>'))
+    .join('\n');
+}
+
+function collectLASTTextRuns(last: ReturnType<typeof hastToLAST>): Array<{ text: string; bold: boolean }> {
+  const runs: Array<{ text: string; bold: boolean }> = [];
+
+  for (const block of Object.values(last.blocks)) {
+    const inlines = (block as { payload?: { inlines?: unknown[] } }).payload?.inlines;
+    if (!Array.isArray(inlines)) continue;
+    for (const inline of inlines) {
+      const record = inline as { kind?: unknown; text?: unknown; marks?: { bold?: unknown } };
+      if (record.kind === 'text_run' && typeof record.text === 'string') {
+        runs.push({ text: record.text, bold: record.marks?.bold === true });
+      }
+    }
+  }
+
+  return runs;
+}
+
+function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean }> {
+  const runs: Array<{ text: string; bold: boolean }> = [];
+  const seen = new WeakSet<object>();
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    if (seen.has(node)) return;
+    seen.add(node);
+
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+
+    const record = node as {
+      text_run?: {
+        content?: unknown;
+        text_element_style?: { bold?: unknown };
+      };
+    };
+    if (typeof record.text_run?.content === 'string') {
+      runs.push({
+        text: record.text_run.content,
+        bold: record.text_run.text_element_style?.bold === true,
+      });
+    }
+
+    for (const child of Object.values(record)) {
+      visit(child);
+    }
+  };
+
+  const flatBlocks = (value as { flatBlocks?: unknown }).flatBlocks;
+  if (flatBlocks && typeof flatBlocks === 'object') {
+    for (const block of Object.values(flatBlocks)) {
+      visit(block);
+    }
+  } else {
+    visit(value);
+  }
+
+  return runs;
 }
 
 test('markdownToHast + hastToLAST converts rich GFM fixture to fragment LAST', async () => {
@@ -275,7 +389,10 @@ test('normalizeMarkdownBeforeParse fixes opening bold adjacent to chinese text',
   const markdown = '另一个有用的办法，是**往电机里塞进更多铜线。**更粗、填充更密的铜线在承载同样电流时电阻更低。';
   const normalized = normalizeMarkdownBeforeParse(markdown);
 
-  assert.equal(normalized, '另一个有用的办法，是**往电机里塞进更多铜线**。更粗、填充更密的铜线在承载同样电流时电阻更低。');
+  assert.equal(
+    normalized,
+    '另一个有用的办法，是**往电机里塞进更多铜线**。更粗、填充更密的铜线在承载同样电流时电阻更低。',
+  );
 });
 
 test('normalizeMarkdownBeforeParse keeps multiple same-line bold spans from crossing into each other', () => {
@@ -310,7 +427,10 @@ test('markdownToHast normalizes chinese bold punctuation before parsing emphasis
   const hast = await markdownToHast(markdown);
 
   assert.equal(hasTagName(hast, 'strong'), true);
-  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
 });
 
 test('markdownToHast normalizes opening bold adjacent to chinese text before parsing emphasis', async () => {
@@ -318,7 +438,10 @@ test('markdownToHast normalizes opening bold adjacent to chinese text before par
   const hast = await markdownToHast(markdown);
 
   assert.equal(hasTagName(hast, 'strong'), true);
-  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
 });
 
 test('markdownToHast keeps multiple same-line bold spans separate after normalization', async () => {
@@ -327,7 +450,10 @@ test('markdownToHast keeps multiple same-line bold spans separate after normaliz
   const hast = await markdownToHast(markdown);
 
   assert.equal(hasTagName(hast, 'strong'), true);
-  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
 });
 
 test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence without stray asterisks', async () => {
@@ -338,7 +464,10 @@ test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence 
   const btt = convertLASTToBTT(last, { documentId: 'bold-cjk-multi' });
 
   assert.equal(hasTagName(hast, 'strong'), true);
-  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
 
   const textIds = last.indexes.byType.text ?? [];
   assert.equal(textIds.length, 1);
@@ -363,13 +492,18 @@ test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence 
   const rawTextBlockId = textIds[0] ?? '';
   const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
   const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
-    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{
+        text_run?: { content?: string; text_element_style?: Record<string, unknown> };
+      }>)
     : [];
   const boldContents = elements
     .filter((element) => element.text_run?.text_element_style?.bold === true)
     .map((element) => element.text_run?.content ?? '');
   assert.deepEqual(boldContents, ['2022', '据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。']);
-  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+  assert.equal(
+    elements.some((element) => element.text_run?.content?.includes('**')),
+    false,
+  );
 });
 
 test('hastToLAST and BTT keep multiple same-line bold spans separate without stray asterisks', async () => {
@@ -406,7 +540,9 @@ test('hastToLAST and BTT keep multiple same-line bold spans separate without str
   const rawTextBlockId = textIds[0] ?? '';
   const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
   const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
-    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{
+        text_run?: { content?: string; text_element_style?: Record<string, unknown> };
+      }>)
     : [];
   const boldContents = elements
     .filter((element) => element.text_run?.text_element_style?.bold === true)
@@ -417,7 +553,84 @@ test('hastToLAST and BTT keep multiple same-line bold spans separate without str
     '67% 的毛利率',
     '我们甚至已经听到某些交易的价格远低于 2 万美元。',
   ]);
-  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+  assert.equal(
+    elements.some((element) => element.text_run?.content?.includes('**')),
+    false,
+  );
+});
+
+test('normalizeMarkdownBeforeParse keeps valid bold spans after a chinese comma', async () => {
+  const markdown = (await readFile(unitreeFixturePath, 'utf8')).split(/\n/)[249] ?? '';
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(normalized, markdown);
+
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'bold-cjk-comma-valid' });
+  const btt = convertLASTToBTT(last, { documentId: 'bold-cjk-comma-valid' });
+
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
+
+  const lastRuns = collectLASTTextRuns(last);
+  const lastBoldTexts = lastRuns.filter((run) => run.bold).map((run) => run.text);
+  assert.deepEqual(lastBoldTexts, ['最多约 250 台人形机器人', '今天已经部署了 30 台 G1，还有多家公司部署了 5-6 台 G1']);
+  assert.equal(
+    lastRuns.some((run) => run.text.includes('**')),
+    false,
+  );
+
+  const bttRuns = collectBTTTextRuns(btt);
+  const bttBoldTexts = bttRuns.filter((run) => run.bold).map((run) => run.text);
+  assert.deepEqual(bttBoldTexts, ['最多约 250 台人形机器人', '今天已经部署了 30 台 G1，还有多家公司部署了 5-6 台 G1']);
+  assert.equal(
+    bttRuns.some((run) => run.text.includes('**')),
+    false,
+  );
+});
+
+test('Unitree verification fixture preserves non-quote source bold intent without stray asterisks', async () => {
+  const markdown = await readFile(unitreeFixturePath, 'utf8');
+  const expectedBoldTexts = collectSourceBoldIntentTexts(omitBlockquoteLines(markdown));
+
+  assert.ok(expectedBoldTexts.length > 20);
+
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'unitree-bold-fixture' });
+  const btt = convertLASTToBTT(last, { documentId: 'unitree-bold-fixture' });
+
+  assert.equal(
+    collectTextNodeValues(hast).some((value) => value.includes('**')),
+    false,
+  );
+
+  const lastRuns = collectLASTTextRuns(last);
+  const lastBoldText = lastRuns
+    .filter((run) => run.bold)
+    .map((run) => run.text)
+    .join('');
+  for (const expected of expectedBoldTexts) {
+    assert.equal(lastBoldText.includes(expected), true, `missing LAST bold text: ${expected}`);
+  }
+  assert.equal(
+    lastRuns.some((run) => run.text.includes('**')),
+    false,
+  );
+
+  const bttRuns = collectBTTTextRuns(btt);
+  const bttBoldText = bttRuns
+    .filter((run) => run.bold)
+    .map((run) => run.text)
+    .join('');
+  for (const expected of expectedBoldTexts) {
+    assert.equal(bttBoldText.includes(expected), true, `missing BTT bold text: ${expected}`);
+  }
+  assert.equal(
+    bttRuns.some((run) => run.text.includes('**')),
+    false,
+  );
 });
 
 test('hastToLAST and BTT preserve bold text and links when opening bold is adjacent to chinese text', async () => {
@@ -455,16 +668,22 @@ test('hastToLAST and BTT preserve bold text and links when opening bold is adjac
   const rawTextBlockId = textIds[0] ?? '';
   const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
   const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
-    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{
+        text_run?: { content?: string; text_element_style?: Record<string, unknown> };
+      }>)
     : [];
   const boldContents = elements
     .filter((element) => element.text_run?.text_element_style?.bold === true)
     .map((element) => element.text_run?.content ?? '');
   assert.deepEqual(boldContents, ['往电机里塞进更多铜线']);
-  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+  assert.equal(
+    elements.some((element) => element.text_run?.content?.includes('**')),
+    false,
+  );
   assert.equal(
     elements.some(
-      (element) => element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
+      (element) =>
+        element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
     ),
     true,
   );
@@ -483,10 +702,14 @@ test('hastToLAST and BTT preserve bold text and links after chinese bold normali
   assert.ok(block && block.type === 'text');
   if (!block || block.type !== 'text') return;
 
-  assert.equal(block.payload.inlines.some((inline) => inline.kind === 'text_run' && inline.marks.bold === true), true);
+  assert.equal(
+    block.payload.inlines.some((inline) => inline.kind === 'text_run' && inline.marks.bold === true),
+    true,
+  );
   assert.equal(
     block.payload.inlines.some(
-      (inline) => inline.kind === 'text_run' && 'text' in inline && typeof inline.text === 'string' && inline.text.includes('**'),
+      (inline) =>
+        inline.kind === 'text_run' && 'text' in inline && typeof inline.text === 'string' && inline.text.includes('**'),
     ),
     false,
   );
@@ -500,13 +723,22 @@ test('hastToLAST and BTT preserve bold text and links after chinese bold normali
   const rawTextBlockId = textIds[0] ?? '';
   const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
   const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
-    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{
+        text_run?: { content?: string; text_element_style?: Record<string, unknown> };
+      }>)
     : [];
-  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
-  assert.equal(elements.some((element) => element.text_run?.text_element_style?.bold === true), true);
+  assert.equal(
+    elements.some((element) => element.text_run?.content?.includes('**')),
+    false,
+  );
+  assert.equal(
+    elements.some((element) => element.text_run?.text_element_style?.bold === true),
+    true,
+  );
   assert.equal(
     elements.some(
-      (element) => element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
+      (element) =>
+        element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
     ),
     true,
   );
