@@ -271,6 +271,13 @@ test('normalizeMarkdownBeforeParse does not rewrite after an already closed bold
   assert.equal(normalized, markdown);
 });
 
+test('normalizeMarkdownBeforeParse fixes opening bold adjacent to chinese text', () => {
+  const markdown = '另一个有用的办法，是**往电机里塞进更多铜线。**更粗、填充更密的铜线在承载同样电流时电阻更低。';
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(normalized, '另一个有用的办法，是**往电机里塞进更多铜线**。更粗、填充更密的铜线在承载同样电流时电阻更低。');
+});
+
 test('normalizeMarkdownBeforeParse skips inline code fenced code and already valid bold endings', () => {
   const markdown = [
     '这里是 `**一句中文，**像这样`',
@@ -289,6 +296,14 @@ test('normalizeMarkdownBeforeParse skips inline code fenced code and already val
 
 test('markdownToHast normalizes chinese bold punctuation before parsing emphasis', async () => {
   const markdown = '**BYD 可以自由决定哪些制造环节值得内收，从而让优势继续复利。**它把电芯、驱动、电机都做到了内部。';
+  const hast = await markdownToHast(markdown);
+
+  assert.equal(hasTagName(hast, 'strong'), true);
+  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+});
+
+test('markdownToHast normalizes opening bold adjacent to chinese text before parsing emphasis', async () => {
+  const markdown = '另一个有用的办法，是**往电机里塞进更多铜线。**更粗、填充更密的铜线在承载同样电流时电阻更低。';
   const hast = await markdownToHast(markdown);
 
   assert.equal(hasTagName(hast, 'strong'), true);
@@ -335,6 +350,56 @@ test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence 
     .map((element) => element.text_run?.content ?? '');
   assert.deepEqual(boldContents, ['2022', '据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。']);
   assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+});
+
+test('hastToLAST and BTT preserve bold text and links when opening bold is adjacent to chinese text', async () => {
+  const markdown =
+    '另一个有用的办法，是**往电机里塞进更多铜线。**更粗、填充更密的铜线在承载同样电流时电阻更低，Unitree 把这称为它们的 [“Low Copper Consumption Coil](https://www.unitree.com/go1/motor)”。';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'bold-cjk-adjacent' });
+  const btt = convertLASTToBTT(last, { documentId: 'bold-cjk-adjacent' });
+
+  const textIds = last.indexes.byType.text ?? [];
+  assert.equal(textIds.length, 1);
+  const block = textIds[0] ? last.blocks[textIds[0]] : undefined;
+  assert.ok(block && block.type === 'text');
+  if (!block || block.type !== 'text') return;
+
+  const boldRuns = block.payload.inlines.filter(
+    (inline): inline is Extract<(typeof block.payload.inlines)[number], { kind: 'text_run' }> =>
+      inline.kind === 'text_run' && inline.marks.bold === true,
+  );
+  assert.equal(boldRuns.length, 1);
+  assert.equal(boldRuns[0]?.text, '往电机里塞进更多铜线');
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && inline.marks.link?.url === 'https://www.unitree.com/go1/motor',
+    ),
+    true,
+  );
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && typeof inline.text === 'string' && inline.text.includes('**'),
+    ),
+    false,
+  );
+
+  const rawTextBlockId = textIds[0] ?? '';
+  const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
+  const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    : [];
+  const boldContents = elements
+    .filter((element) => element.text_run?.text_element_style?.bold === true)
+    .map((element) => element.text_run?.content ?? '');
+  assert.deepEqual(boldContents, ['往电机里塞进更多铜线']);
+  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+  assert.equal(
+    elements.some(
+      (element) => element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
+    ),
+    true,
+  );
 });
 
 test('hastToLAST and BTT preserve bold text and links after chinese bold normalization', async () => {
