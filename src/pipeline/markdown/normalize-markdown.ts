@@ -1,13 +1,16 @@
 const CJK_BOLD_TRAILING_PUNCTUATION = '，。；：！？、】【）」』》、';
 const BOLD_PUNCTUATION_RE = new RegExp(
-  `\\*\\*([^*\\n]+?)([${CJK_BOLD_TRAILING_PUNCTUATION}])\\*\\*(?=[\\p{Script=Han}\\p{Letter}\\p{Number}\\[])`,
+  `(^|[^\\p{Script=Han}\\p{Letter}\\p{Number}*])(\\*\\*([^*\\n]+?)([${CJK_BOLD_TRAILING_PUNCTUATION}])\\*\\*)(?=[\\p{Script=Han}\\p{Letter}\\p{Number}\\[])`,
   'gu',
 );
 
 function transformOutsideInlineCode(segment: string): string {
-  return segment.replace(BOLD_PUNCTUATION_RE, (_match, content: string, punctuation: string) => {
-    return `**${content}**${punctuation}`;
-  });
+  return segment.replace(
+    BOLD_PUNCTUATION_RE,
+    (_match, prefix: string, _fullBold: string, content: string, punctuation: string) => {
+      return `${prefix}**${content}**${punctuation}`;
+    },
+  );
 }
 
 function normalizeLineOutsideInlineCode(line: string): string {

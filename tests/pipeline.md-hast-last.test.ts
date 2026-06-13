@@ -262,6 +262,15 @@ test('normalizeMarkdownBeforeParse moves trailing chinese punctuation outside bo
   );
 });
 
+test('normalizeMarkdownBeforeParse does not rewrite after an already closed bold span on the same line', () => {
+  const markdown =
+    'Tesla 在 **2022** 年首次展示人形机器人，而当它以及其他西方玩家如今仍在生产处于早期、尚未成熟的人形机器人时，**据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。**';
+
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(normalized, markdown);
+});
+
 test('normalizeMarkdownBeforeParse skips inline code fenced code and already valid bold endings', () => {
   const markdown = [
     '这里是 `**一句中文，**像这样`',
@@ -284,6 +293,48 @@ test('markdownToHast normalizes chinese bold punctuation before parsing emphasis
 
   assert.equal(hasTagName(hast, 'strong'), true);
   assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+});
+
+test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence without stray asterisks', async () => {
+  const markdown =
+    'Tesla 在 **2022** 年首次展示人形机器人，而当它以及其他西方玩家如今仍在生产处于早期、尚未成熟的人形机器人时，**据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。**';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'bold-cjk-multi' });
+  const btt = convertLASTToBTT(last, { documentId: 'bold-cjk-multi' });
+
+  assert.equal(hasTagName(hast, 'strong'), true);
+  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+
+  const textIds = last.indexes.byType.text ?? [];
+  assert.equal(textIds.length, 1);
+  const block = textIds[0] ? last.blocks[textIds[0]] : undefined;
+  assert.ok(block && block.type === 'text');
+  if (!block || block.type !== 'text') return;
+
+  const boldRuns = block.payload.inlines.filter(
+    (inline): inline is Extract<(typeof block.payload.inlines)[number], { kind: 'text_run' }> =>
+      inline.kind === 'text_run' && inline.marks.bold === true,
+  );
+  assert.equal(boldRuns.length, 2);
+  assert.equal(boldRuns[0]?.text, '2022');
+  assert.equal(boldRuns[1]?.text, '据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。');
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && typeof inline.text === 'string' && inline.text.includes('**'),
+    ),
+    false,
+  );
+
+  const rawTextBlockId = textIds[0] ?? '';
+  const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
+  const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    : [];
+  const boldContents = elements
+    .filter((element) => element.text_run?.text_element_style?.bold === true)
+    .map((element) => element.text_run?.content ?? '');
+  assert.deepEqual(boldContents, ['2022', '据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。']);
+  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
 });
 
 test('hastToLAST and BTT preserve bold text and links after chinese bold normalization', async () => {
