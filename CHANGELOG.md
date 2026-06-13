@@ -1,3 +1,10 @@
+## [1.4.7](https://github.com/jacobbubu/md-to-lark/compare/v1.4.6...v1.4.7) (2026-06-13)
+
+
+### Bug Fixes
+
+* avoid bold normalization false positives ([#47](https://github.com/jacobbubu/md-to-lark/issues/47)) ([ab82c82](https://github.com/jacobbubu/md-to-lark/commit/ab82c82ff8ec8e6977b5dad9a55b73e3ddcea23f))
+
 ## [1.4.6](https://github.com/jacobbubu/md-to-lark/compare/v1.4.5...v1.4.6) (2026-06-13)
 
 
