@@ -278,6 +278,17 @@ test('normalizeMarkdownBeforeParse fixes opening bold adjacent to chinese text',
   assert.equal(normalized, '另一个有用的办法，是**往电机里塞进更多铜线**。更粗、填充更密的铜线在承载同样电流时电阻更低。');
 });
 
+test('normalizeMarkdownBeforeParse keeps multiple same-line bold spans from crossing into each other', () => {
+  const markdown =
+    '尽管如此，我们认为 Unitree 的**成本结构**恰恰是它相对竞争对手最大的优势之一。过去 12-18 个月里，Unitree 已把税前售价**从 5 万美元以上砍到 2.73 万美元。**即便在这个价位，我们估算它的旗舰 G1 仍能做到**67% 的毛利率。**随着制造规模扩大、BoM（物料清单）快速下降，**我们甚至已经听到某些交易的价格远低于 2 万美元。**';
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(
+    normalized,
+    '尽管如此，我们认为 Unitree 的**成本结构**恰恰是它相对竞争对手最大的优势之一。过去 12-18 个月里，Unitree 已把税前售价**从 5 万美元以上砍到 2.73 万美元**。即便在这个价位，我们估算它的旗舰 G1 仍能做到**67% 的毛利率**。随着制造规模扩大、BoM（物料清单）快速下降，**我们甚至已经听到某些交易的价格远低于 2 万美元。**',
+  );
+});
+
 test('normalizeMarkdownBeforeParse skips inline code fenced code and already valid bold endings', () => {
   const markdown = [
     '这里是 `**一句中文，**像这样`',
@@ -304,6 +315,15 @@ test('markdownToHast normalizes chinese bold punctuation before parsing emphasis
 
 test('markdownToHast normalizes opening bold adjacent to chinese text before parsing emphasis', async () => {
   const markdown = '另一个有用的办法，是**往电机里塞进更多铜线。**更粗、填充更密的铜线在承载同样电流时电阻更低。';
+  const hast = await markdownToHast(markdown);
+
+  assert.equal(hasTagName(hast, 'strong'), true);
+  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+});
+
+test('markdownToHast keeps multiple same-line bold spans separate after normalization', async () => {
+  const markdown =
+    '尽管如此，我们认为 Unitree 的**成本结构**恰恰是它相对竞争对手最大的优势之一。过去 12-18 个月里，Unitree 已把税前售价**从 5 万美元以上砍到 2.73 万美元。**即便在这个价位，我们估算它的旗舰 G1 仍能做到**67% 的毛利率。**随着制造规模扩大、BoM（物料清单）快速下降，**我们甚至已经听到某些交易的价格远低于 2 万美元。**';
   const hast = await markdownToHast(markdown);
 
   assert.equal(hasTagName(hast, 'strong'), true);
@@ -349,6 +369,54 @@ test('hastToLAST and BTT keep multiple valid bold spans on one chinese sentence 
     .filter((element) => element.text_run?.text_element_style?.bold === true)
     .map((element) => element.text_run?.content ?? '');
   assert.deepEqual(boldContents, ['2022', '据我们了解，Unitree 可能会在未来几周内交付第 10,000 台。']);
+  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+});
+
+test('hastToLAST and BTT keep multiple same-line bold spans separate without stray asterisks', async () => {
+  const markdown =
+    '尽管如此，我们认为 Unitree 的**成本结构**恰恰是它相对竞争对手最大的优势之一。过去 12-18 个月里，Unitree 已把税前售价**从 5 万美元以上砍到 2.73 万美元。**即便在这个价位，我们估算它的旗舰 G1 仍能做到**67% 的毛利率。**随着制造规模扩大、BoM（物料清单）快速下降，**我们甚至已经听到某些交易的价格远低于 2 万美元。**';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'bold-cjk-chain' });
+  const btt = convertLASTToBTT(last, { documentId: 'bold-cjk-chain' });
+
+  const textIds = last.indexes.byType.text ?? [];
+  assert.equal(textIds.length, 1);
+  const block = textIds[0] ? last.blocks[textIds[0]] : undefined;
+  assert.ok(block && block.type === 'text');
+  if (!block || block.type !== 'text') return;
+
+  const boldRuns = block.payload.inlines.filter(
+    (inline): inline is Extract<(typeof block.payload.inlines)[number], { kind: 'text_run' }> =>
+      inline.kind === 'text_run' && inline.marks.bold === true,
+  );
+  const boldTexts = boldRuns.map((inline) => inline.text ?? '');
+  assert.deepEqual(boldTexts, [
+    '成本结构',
+    '从 5 万美元以上砍到 2.73 万美元',
+    '67% 的毛利率',
+    '我们甚至已经听到某些交易的价格远低于 2 万美元。',
+  ]);
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && typeof inline.text === 'string' && inline.text.includes('**'),
+    ),
+    false,
+  );
+
+  const rawTextBlockId = textIds[0] ?? '';
+  const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
+  const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    : [];
+  const boldContents = elements
+    .filter((element) => element.text_run?.text_element_style?.bold === true)
+    .map((element) => element.text_run?.content ?? '');
+  assert.deepEqual(boldContents, [
+    '成本结构',
+    '从 5 万美元以上砍到 2.73 万美元',
+    '67% 的毛利率',
+    '我们甚至已经听到某些交易的价格远低于 2 万美元。',
+  ]);
   assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
 });
 

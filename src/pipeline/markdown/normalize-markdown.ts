@@ -3,7 +3,7 @@ import remarkParse from 'remark-parse';
 
 const CJK_BOLD_TRAILING_PUNCTUATION = new Set(['，', '。', '；', '：', '！', '？', '、', '）', '》', '】', '」', '』']);
 const NORMALIZATION_NEXT_CHAR_RE = /[\p{Script=Han}\p{Letter}\p{Number}\[]/u;
-const PROTECTED_NODE_TYPES = new Set(['code', 'inlineCode', 'strong', 'html']);
+const PROTECTED_NODE_TYPES = new Set(['code', 'inlineCode', 'html']);
 
 interface ProtectedRange {
   start: number;
@@ -87,6 +87,11 @@ function collectCjkBoldNormalizationEdits(segment: string, baseOffset: number): 
       cursor = open + 2;
       continue;
     }
+    const firstContentChar = segment[open + 2] ?? '';
+    if (!firstContentChar || /\s/u.test(firstContentChar)) {
+      cursor = open + 2;
+      continue;
+    }
 
     let closeSearch = open + 2;
     let matched = false;
@@ -96,6 +101,10 @@ function collectCjkBoldNormalizationEdits(segment: string, baseOffset: number): 
       const rawContent = segment.slice(open + 2, close);
       if (rawContent.includes('\n')) {
         break;
+      }
+      if (rawContent.includes('**')) {
+        closeSearch = close + 2;
+        continue;
       }
       const punctuation = segment[close - 1] ?? '';
       const content = segment.slice(open + 2, close - 1);
