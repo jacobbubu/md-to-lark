@@ -6,9 +6,33 @@ import { fileURLToPath } from 'node:url';
 import type { Root as HastRoot } from 'hast';
 import { DEFAULT_IMAGE_WIDTH, DEFAULT_TABLE_CELL_IMAGE_WIDTH } from '../src/last/image-defaults.js';
 import { hastToLAST, markdownToHast } from '../src/pipeline/index.js';
+import { normalizeMarkdownBeforeParse } from '../src/pipeline/markdown/normalize-markdown.js';
+import { convertLASTToBTT } from '../src/interop/index.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const richFixturePath = path.join(currentDir, 'fixtures', 'md', 'rich-gfm.md');
+
+function collectTextNodeValues(node: unknown): string[] {
+  if (!node || typeof node !== 'object') return [];
+  const record = node as { type?: unknown; value?: unknown; children?: unknown[] };
+  const values: string[] = [];
+  if (record.type === 'text' && typeof record.value === 'string') {
+    values.push(record.value);
+  }
+  for (const child of record.children ?? []) {
+    values.push(...collectTextNodeValues(child));
+  }
+  return values;
+}
+
+function hasTagName(node: unknown, tagName: string): boolean {
+  if (!node || typeof node !== 'object') return false;
+  const record = node as { type?: unknown; tagName?: unknown; children?: unknown[] };
+  if (record.type === 'element' && record.tagName === tagName) {
+    return true;
+  }
+  return (record.children ?? []).some((child) => hasTagName(child, tagName));
+}
 
 test('markdownToHast + hastToLAST converts rich GFM fixture to fragment LAST', async () => {
   const markdown = await readFile(richFixturePath, 'utf8');
@@ -225,6 +249,83 @@ test('markdownToHast keeps currency amounts as plain text when single-dollar mat
     .map((inline) => ('text' in inline && typeof inline.text === 'string' ? inline.text : ''))
     .join('');
   assert.equal(text, markdown);
+});
+
+test('normalizeMarkdownBeforeParse moves trailing chinese punctuation outside bold markers', () => {
+  const markdown =
+    '**随着汽车销量扩大，掌握电芯会把需求直接传导出去，进而带来供给改善和生态形成，**像 [Hunan Yuneng](https://example.com) 和 [Shenzhen Dynanonic](https://example.com) 一样。';
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(
+    normalized,
+    '**随着汽车销量扩大，掌握电芯会把需求直接传导出去，进而带来供给改善和生态形成**，像 [Hunan Yuneng](https://example.com) 和 [Shenzhen Dynanonic](https://example.com) 一样。',
+  );
+});
+
+test('normalizeMarkdownBeforeParse skips inline code fenced code and already valid bold endings', () => {
+  const markdown = [
+    '这里是 `**一句中文，**像这样`',
+    '',
+    '```md',
+    '**一句中文，**像这样',
+    '```',
+    '',
+    '**BYD 的战略是关键。**',
+  ].join('\n');
+
+  const normalized = normalizeMarkdownBeforeParse(markdown);
+
+  assert.equal(normalized, markdown);
+});
+
+test('markdownToHast normalizes chinese bold punctuation before parsing emphasis', async () => {
+  const markdown = '**BYD 可以自由决定哪些制造环节值得内收，从而让优势继续复利。**它把电芯、驱动、电机都做到了内部。';
+  const hast = await markdownToHast(markdown);
+
+  assert.equal(hasTagName(hast, 'strong'), true);
+  assert.equal(collectTextNodeValues(hast).some((value) => value.includes('**')), false);
+});
+
+test('hastToLAST and BTT preserve bold text and links after chinese bold normalization', async () => {
+  const markdown =
+    '**随着汽车销量扩大，掌握电芯会把需求直接传导出去，进而带来供给改善和生态形成，**像 [Hunan Yuneng](https://example.com) 和 [Shenzhen Dynanonic](https://example.com) 一样。';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'bold-cjk' });
+  const btt = convertLASTToBTT(last, { documentId: 'bold-cjk' });
+
+  const textIds = last.indexes.byType.text ?? [];
+  assert.equal(textIds.length, 1);
+  const block = textIds[0] ? last.blocks[textIds[0]] : undefined;
+  assert.ok(block && block.type === 'text');
+  if (!block || block.type !== 'text') return;
+
+  assert.equal(block.payload.inlines.some((inline) => inline.kind === 'text_run' && inline.marks.bold === true), true);
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && 'text' in inline && typeof inline.text === 'string' && inline.text.includes('**'),
+    ),
+    false,
+  );
+  assert.equal(
+    block.payload.inlines.some(
+      (inline) => inline.kind === 'text_run' && inline.marks.link?.url === 'https://example.com',
+    ),
+    true,
+  );
+
+  const rawTextBlockId = textIds[0] ?? '';
+  const rawTextBlock = rawTextBlockId ? btt.flatBlocks[rawTextBlockId]?.text : undefined;
+  const elements = Array.isArray((rawTextBlock as { elements?: unknown[] } | undefined)?.elements)
+    ? ((rawTextBlock as { elements?: unknown[] }).elements as Array<{ text_run?: { content?: string; text_element_style?: Record<string, unknown> } }>)
+    : [];
+  assert.equal(elements.some((element) => element.text_run?.content?.includes('**')), false);
+  assert.equal(elements.some((element) => element.text_run?.text_element_style?.bold === true), true);
+  assert.equal(
+    elements.some(
+      (element) => element.text_run?.text_element_style?.link && typeof element.text_run?.text_element_style?.link === 'object',
+    ),
+    true,
+  );
 });
 
 test('hastToLAST converts standalone supported links into iframe blocks', async () => {
