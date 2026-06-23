@@ -292,6 +292,38 @@ function mergeAdjacentTextRuns(inlines: LASTInlineNode[]): LASTInlineNode[] {
   return merged;
 }
 
+function trimBoundaryNewlinesFromInlines(inlines: LASTInlineNode[]): LASTInlineNode[] {
+  const trimmed = inlines.map((inline) => ({ ...inline }));
+  let start = 0;
+  let end = trimmed.length;
+
+  while (start < end) {
+    const inline = trimmed[start];
+    if (!inline || inline.kind !== 'text_run') break;
+    const nextText = (inline.text ?? '').replace(/^(?:\r?\n)+/, '');
+    if (nextText.length === 0) {
+      start += 1;
+      continue;
+    }
+    inline.text = nextText;
+    break;
+  }
+
+  while (end > start) {
+    const inline = trimmed[end - 1];
+    if (!inline || inline.kind !== 'text_run') break;
+    const nextText = (inline.text ?? '').replace(/(?:\r?\n)+$/, '');
+    if (nextText.length === 0) {
+      end -= 1;
+      continue;
+    }
+    inline.text = nextText;
+    break;
+  }
+
+  return mergeAdjacentTextRuns(trimmed.slice(start, end));
+}
+
 function hasClassName(element: HastElement, expected: string): boolean {
   return getClassNames(element).includes(expected);
 }
@@ -817,17 +849,7 @@ function convertTable(ctx: ConversionContext, table: HastElement, parentId: LAST
 }
 
 function convertBlockquote(ctx: ConversionContext, blockquote: HastElement, parentId: LASTBlockId): LASTBlockId[] {
-  const quoteText = trimBoundaryNewlines(toString(blockquote));
-  const inlines: LASTInlineNode[] = quoteText.length
-    ? [
-        {
-          id: nextInlineId(ctx),
-          kind: 'text_run',
-          marks: createDefaultMarks(),
-          text: quoteText,
-        },
-      ]
-    : [];
+  const inlines = trimBoundaryNewlinesFromInlines(parseInlineNodes(ctx, getChildren(blockquote)));
 
   return [createTextualBlock(ctx, 'quote', parentId, inlines)];
 }

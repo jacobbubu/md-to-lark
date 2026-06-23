@@ -80,15 +80,10 @@ function collectSourceBoldIntentTexts(markdown: string): string[] {
   return texts;
 }
 
-function omitBlockquoteLines(markdown: string): string {
-  return markdown
-    .split('\n')
-    .filter((line) => !line.trimStart().startsWith('>'))
-    .join('\n');
-}
-
-function collectLASTTextRuns(last: ReturnType<typeof hastToLAST>): Array<{ text: string; bold: boolean }> {
-  const runs: Array<{ text: string; bold: boolean }> = [];
+function collectLASTTextRuns(
+  last: ReturnType<typeof hastToLAST>,
+): Array<{ text: string; bold: boolean; link: string | null; inlineCode: boolean }> {
+  const runs: Array<{ text: string; bold: boolean; link: string | null; inlineCode: boolean }> = [];
 
   for (const block of Object.values(last.blocks)) {
     const inlines = (block as { payload?: { inlines?: unknown[] } }).payload?.inlines;
@@ -96,7 +91,15 @@ function collectLASTTextRuns(last: ReturnType<typeof hastToLAST>): Array<{ text:
     for (const inline of inlines) {
       const record = inline as { kind?: unknown; text?: unknown; marks?: { bold?: unknown } };
       if (record.kind === 'text_run' && typeof record.text === 'string') {
-        runs.push({ text: record.text, bold: record.marks?.bold === true });
+        const marks = record.marks as
+          | { bold?: unknown; inlineCode?: unknown; link?: { url?: unknown } | null }
+          | undefined;
+        runs.push({
+          text: record.text,
+          bold: marks?.bold === true,
+          link: typeof marks?.link?.url === 'string' ? marks.link.url : null,
+          inlineCode: marks?.inlineCode === true,
+        });
       }
     }
   }
@@ -104,8 +107,8 @@ function collectLASTTextRuns(last: ReturnType<typeof hastToLAST>): Array<{ text:
   return runs;
 }
 
-function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean }> {
-  const runs: Array<{ text: string; bold: boolean }> = [];
+function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean; link: unknown }> {
+  const runs: Array<{ text: string; bold: boolean; link: unknown }> = [];
   const seen = new WeakSet<object>();
 
   const visit = (node: unknown): void => {
@@ -128,6 +131,7 @@ function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean
       runs.push({
         text: record.text_run.content,
         bold: record.text_run.text_element_style?.bold === true,
+        link: record.text_run.text_element_style?.link ?? null,
       });
     }
 
@@ -268,6 +272,33 @@ test('hastToLAST blockquote strips only boundary newlines', async () => {
   assert.equal(quoteText, 'quoted line');
   assert.equal(quoteText.startsWith('\n'), false);
   assert.equal(quoteText.endsWith('\n'), false);
+});
+
+test('hastToLAST blockquote preserves inline bold link and code marks', async () => {
+  const markdown = '> **GitHub** links to [OpenAI](https://openai.com) with `code`.';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'quote-marks' });
+  const btt = convertLASTToBTT(last, { documentId: 'quote-marks' });
+
+  const quoteIds = last.indexes.byType.quote ?? [];
+  assert.equal(quoteIds.length, 1);
+
+  const lastRuns = collectLASTTextRuns(last);
+  const githubRun = lastRuns.find((run) => run.text === 'GitHub');
+  const openAiRun = lastRuns.find((run) => run.text === 'OpenAI');
+  const codeRun = lastRuns.find((run) => run.text === 'code');
+
+  assert.equal(githubRun?.bold, true);
+  assert.equal(openAiRun?.link, 'https://openai.com');
+  assert.equal(codeRun?.inlineCode, true);
+  assert.equal(lastRuns.map((run) => run.text).join(''), 'GitHub links to OpenAI with code.');
+
+  const bttRuns = collectBTTTextRuns(btt);
+  const bttGithubRun = bttRuns.find((run) => run.text === 'GitHub');
+  const bttOpenAiRun = bttRuns.find((run) => run.text === 'OpenAI');
+
+  assert.equal(bttGithubRun?.bold, true);
+  assert.equal(typeof bttOpenAiRun?.link, 'object');
 });
 
 test('hastToLAST unknown block element trims boundary newlines', () => {
@@ -591,9 +622,9 @@ test('normalizeMarkdownBeforeParse keeps valid bold spans after a chinese comma'
   );
 });
 
-test('Unitree verification fixture preserves non-quote source bold intent without stray asterisks', async () => {
+test('Unitree verification fixture preserves source bold intent without stray asterisks', async () => {
   const markdown = await readFile(unitreeFixturePath, 'utf8');
-  const expectedBoldTexts = collectSourceBoldIntentTexts(omitBlockquoteLines(markdown));
+  const expectedBoldTexts = collectSourceBoldIntentTexts(markdown);
 
   assert.ok(expectedBoldTexts.length > 20);
 
