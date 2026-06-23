@@ -1,3 +1,10 @@
+## [1.4.11](https://github.com/jacobbubu/md-to-lark/compare/v1.4.10...v1.4.11) (2026-06-23)
+
+
+### Bug Fixes
+
+* preserve blockquote inline marks ([#55](https://github.com/jacobbubu/md-to-lark/issues/55)) ([f991849](https://github.com/jacobbubu/md-to-lark/commit/f991849c026bbf56920d792c9b78489f4ebf5c65))
+
 ## [1.4.10](https://github.com/jacobbubu/md-to-lark/compare/v1.4.9...v1.4.10) (2026-06-13)
 
 
