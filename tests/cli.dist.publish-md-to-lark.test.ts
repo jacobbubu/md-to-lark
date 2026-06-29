@@ -95,17 +95,21 @@ test('dist CLI keeps shebang and executable bit after build', async () => {
   assert.ok((mode & 0o111) !== 0, `Expected executable mode on ${distCliPath}, got ${mode.toString(8)}`);
 });
 
-test('dist CLI can be invoked directly', {
-  skip: process.platform === 'win32',
-}, async () => {
-  await ensureDistBuilt();
+test(
+  'dist CLI can be invoked directly',
+  {
+    skip: process.platform === 'win32',
+  },
+  async () => {
+    await ensureDistBuilt();
 
-  const result = await runCommand(distCliPath, ['--help']);
-  assert.equal(result.code, 0);
-  assert.match(result.stdout, /^Usage:/m);
-  assert.match(result.stdout, /--help, -h/);
-  assert.equal(result.stderr.trim(), '');
-});
+    const result = await runCommand(distCliPath, ['--help']);
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /^Usage:/m);
+    assert.match(result.stdout, /--help, -h/);
+    assert.equal(result.stderr.trim(), '');
+  },
+);
 
 test('dist CLI dry-run can load a local preset module', async (t) => {
   await ensureDistBuilt();
@@ -129,15 +133,11 @@ test('dist CLI dry-run can load a local preset module', async (t) => {
     'utf8',
   );
 
-  const result = await runCommand(
-    'node',
-    [distCliPath, '--input', markdownPath, '--preset', presetPath, '--dry-run'],
-    {
-      LARK_APP_ID: 'dist_test_app_id',
-      LARK_APP_SECRET: 'dist_test_app_secret',
-      LARK_FOLDER_TOKEN: 'fld_dist_test',
-    },
-  );
+  const result = await runCommand('node', [distCliPath, '--input', markdownPath, '--preset', presetPath, '--dry-run'], {
+    LARK_APP_ID: 'dist_test_app_id',
+    LARK_APP_SECRET: 'dist_test_app_secret',
+    LARK_FOLDER_TOKEN: 'fld_dist_test',
+  });
 
   assert.equal(result.code, 0, `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
   const payload = JSON.parse(result.stdout) as Array<{

@@ -1,8 +1,4 @@
-import type {
-  LASTModel,
-  LASTTextualBlock,
-  LASTTextualBlockType,
-} from '../last/types.js';
+import type { LASTModel, LASTTextualBlock, LASTTextualBlockType } from '../last/types.js';
 import type { MermaidPatch } from '../lark/docx/render-types.js';
 import { isTextualBlock, extractTextFromInlines, toPlainTextFromInlineList } from './common.js';
 

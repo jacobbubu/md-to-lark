@@ -57,7 +57,7 @@
 url_handlers:
   yt_dlp:
     prefixes:
-      - "youtube.com"
+      - 'youtube.com'
 ---
 ```
 
@@ -128,7 +128,7 @@ frontmatter 里的 `prefixes` 可以是：
 每个生成文件都会变成类似下面这样的形式：
 
 ```md
-[sample-video.mp4](<...local-path...>)
+[sample-video.mp4](...local-path...)
 ```
 
 如果有多个文件，会按多行 Markdown 链接写回去。

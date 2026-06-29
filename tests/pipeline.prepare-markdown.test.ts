@@ -78,12 +78,12 @@ test('prepareMarkdownBeforePublish replaces standalone yt-dlp URL with local med
     "const path = require('node:path');",
     'const args = process.argv.slice(2);',
     "const dirIndex = args.indexOf('--paths');",
-    "const downloadDir = dirIndex >= 0 ? args[dirIndex + 1] : process.cwd();",
+    'const downloadDir = dirIndex >= 0 ? args[dirIndex + 1] : process.cwd();',
     "const sourceUrl = args[args.length - 1] || 'https://example.com/video';",
-    "fs.mkdirSync(downloadDir, { recursive: true });",
+    'fs.mkdirSync(downloadDir, { recursive: true });',
     "const filePath = path.join(downloadDir, 'sample-video.mp4');",
     "fs.writeFileSync(filePath, 'video-bytes');",
-    "process.stdout.write(`__M2L__${filePath}\\t${sourceUrl}\\t1\\n`);",
+    'process.stdout.write(`__M2L__${filePath}\\t${sourceUrl}\\t1\\n`);',
   ].join('\n');
   await writeFile(fakeYtDlpPath, fakeYtDlpScript, { encoding: 'utf8', mode: 0o755 });
   await chmod(fakeYtDlpPath, 0o755);
@@ -129,12 +129,12 @@ test('prepareMarkdownBeforePublish escapes markdown special chars in yt-dlp link
     "const path = require('node:path');",
     'const args = process.argv.slice(2);',
     "const dirIndex = args.indexOf('--paths');",
-    "const downloadDir = dirIndex >= 0 ? args[dirIndex + 1] : process.cwd();",
+    'const downloadDir = dirIndex >= 0 ? args[dirIndex + 1] : process.cwd();',
     "const sourceUrl = args[args.length - 1] || 'https://example.com/video';",
-    "fs.mkdirSync(downloadDir, { recursive: true });",
+    'fs.mkdirSync(downloadDir, { recursive: true });',
     "const filePath = path.join(downloadDir, 'nash_su_-_e_acc_-_Claude_+_Figma-2024.mp4');",
     "fs.writeFileSync(filePath, 'video-bytes');",
-    "process.stdout.write(`__M2L__${filePath}\\t${sourceUrl}\\t1\\n`);",
+    'process.stdout.write(`__M2L__${filePath}\\t${sourceUrl}\\t1\\n`);',
   ].join('\n');
   await writeFile(fakeYtDlpPath, fakeYtDlpScript, { encoding: 'utf8', mode: 0o755 });
   await chmod(fakeYtDlpPath, 0o755);

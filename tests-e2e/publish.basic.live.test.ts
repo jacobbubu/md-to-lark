@@ -4,11 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { publishMdToLark } from '../src/commands/publish-md/command.js';
 import { buildE2ETitle, getLiveE2ESkipReason, loadLiveE2EConfig } from './helpers/live-env.js';
-import {
-  createLiveLarkContext,
-  waitForDocumentIdByTitle,
-  waitForLiveDocumentSnapshot,
-} from './helpers/live-lark.js';
+import { createLiveLarkContext, waitForDocumentIdByTitle, waitForLiveDocumentSnapshot } from './helpers/live-lark.js';
 import { createTempDir, withSilencedConsole } from './helpers/test-support.js';
 
 test('live publish creates a new Feishu doc and readback matches basic structure', async (t) => {

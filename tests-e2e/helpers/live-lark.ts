@@ -58,8 +58,7 @@ export function createLiveLarkContext(config: LiveE2EConfig): LiveLarkContext {
 
   return {
     client,
-    authOptions:
-      clientConfig.tokenType === 'user' ? lark.withUserAccessToken(clientConfig.userAccessToken) : undefined,
+    authOptions: clientConfig.tokenType === 'user' ? lark.withUserAccessToken(clientConfig.userAccessToken) : undefined,
     docxLimiter: new RateLimiter(parsePositiveInt(config.env.LARK_DOCX_MIN_INTERVAL_MS, 260)),
     mediaLimiter: new RateLimiter(parsePositiveInt(config.env.LARK_MEDIA_MIN_INTERVAL_MS, 450)),
     folderToken: config.folderToken,

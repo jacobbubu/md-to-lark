@@ -5,7 +5,11 @@ import {
 } from '../../lark/docx/render-types.js';
 
 export { DEFAULT_MERMAID_BOARD_SYNTAX_TYPE } from '../../lark/docx/render-types.js';
-export type { MermaidBoardRenderConfig, MermaidRenderConfig, MermaidRenderTarget } from '../../lark/docx/render-types.js';
+export type {
+  MermaidBoardRenderConfig,
+  MermaidRenderConfig,
+  MermaidRenderTarget,
+} from '../../lark/docx/render-types.js';
 
 const TEXT_DRAWING_TARGET_ALIASES = new Set(['text-drawing', 'text_drawing', 'textdrawing', 'text']);
 const BOARD_TARGET_ALIASES = new Set(['board', 'whiteboard', 'canvas']);

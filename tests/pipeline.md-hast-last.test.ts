@@ -663,7 +663,14 @@ test('hastToLAST and BTT keep multiple same-line bold spans separate without str
 });
 
 test('normalizeMarkdownBeforeParse keeps valid bold spans after a chinese comma', async () => {
-  const markdown = (await readFile(unitreeFixturePath, 'utf8')).split(/\n/)[249] ?? '';
+  const markdown =
+    (await readFile(unitreeFixturePath, 'utf8'))
+      .split(/\n/)
+      .find(
+        (line) =>
+          line.includes('最多约 250 台人形机器人') &&
+          line.includes('今天已经部署了 30 台 G1，还有多家公司部署了 5-6 台 G1'),
+      ) ?? '';
   const normalized = normalizeMarkdownBeforeParse(markdown);
 
   assert.equal(normalized, markdown);

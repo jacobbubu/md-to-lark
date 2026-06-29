@@ -33,8 +33,8 @@ test('buildCreatePayloadFromRawBlock sanitizes links, file fields, and table pay
     },
   });
   assert.equal(
-    (textPayload?.text as { elements?: Array<{ text_run?: { text_element_style?: Record<string, unknown> } }> }).elements?.[0]
-      ?.text_run?.text_element_style?.link,
+    (textPayload?.text as { elements?: Array<{ text_run?: { text_element_style?: Record<string, unknown> } }> })
+      .elements?.[0]?.text_run?.text_element_style?.link,
     undefined,
   );
 
@@ -81,7 +81,10 @@ test('buildCreatePayloadFromRawBlock sanitizes links, file fields, and table pay
     },
   });
   assert.equal((tablePayload?.table as { cells?: unknown }).cells, undefined);
-  assert.deepEqual((tablePayload?.table as { property?: { column_width?: number[] } }).property?.column_width, [120, 301]);
+  assert.deepEqual(
+    (tablePayload?.table as { property?: { column_width?: number[] } }).property?.column_width,
+    [120, 301],
+  );
 });
 
 test('render payload helpers detect patch-safe styles and normalize text patch input', () => {
@@ -131,7 +134,8 @@ test('render payload helpers detect patch-safe styles and normalize text patch i
     },
   });
   assert.equal(
-    (elements?.[0] as { text_run?: { text_element_style?: Record<string, unknown> } })?.text_run?.text_element_style?.link,
+    (elements?.[0] as { text_run?: { text_element_style?: Record<string, unknown> } })?.text_run?.text_element_style
+      ?.link,
     undefined,
   );
 });

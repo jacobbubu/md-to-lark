@@ -4,11 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { publishMdToLark } from '../src/commands/publish-md/command.js';
 import { buildE2ETitle, getLiveE2ESkipReason, loadLiveE2EConfig } from './helpers/live-env.js';
-import {
-  createEmptyDocumentForE2E,
-  createLiveLarkContext,
-  waitForLiveDocumentSnapshot,
-} from './helpers/live-lark.js';
+import { createEmptyDocumentForE2E, createLiveLarkContext, waitForLiveDocumentSnapshot } from './helpers/live-lark.js';
 import { createTempDir, withSilencedConsole } from './helpers/test-support.js';
 
 test('live publish rewrites an existing Feishu doc when --doc is used', async (t) => {

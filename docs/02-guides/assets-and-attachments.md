@@ -59,7 +59,7 @@ await publishMdToLark(
     dryRun: true,
   },
   process.env,
-)
+);
 ```
 
 这不会改变 Markdown 文件本身的位置，只会改变本地相对资源的解析基目录。

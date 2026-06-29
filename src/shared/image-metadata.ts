@@ -7,9 +7,7 @@ export interface ImageDimensions {
 }
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-const JPEG_SOF_MARKERS = new Set([
-  0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
-]);
+const JPEG_SOF_MARKERS = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
 
 function isPositiveInteger(value: number): boolean {
   return Number.isInteger(value) && value > 0;
@@ -80,11 +78,7 @@ function readJpegDimensions(buffer: Buffer): ImageDimensions | null {
 }
 
 function readWebpDimensions(buffer: Buffer): ImageDimensions | null {
-  if (
-    buffer.length < 30 ||
-    buffer.toString('ascii', 0, 4) !== 'RIFF' ||
-    buffer.toString('ascii', 8, 12) !== 'WEBP'
-  ) {
+  if (buffer.length < 30 || buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') {
     return null;
   }
 
@@ -174,9 +168,6 @@ export function getScaledHeightForWidth(
   return scaled > 0 ? scaled : undefined;
 }
 
-export function getScaledHeightForLocalImage(
-  filePath: string,
-  targetWidth: number | undefined,
-): number | undefined {
+export function getScaledHeightForLocalImage(filePath: string, targetWidth: number | undefined): number | undefined {
   return getScaledHeightForWidth(readLocalImageDimensions(filePath), targetWidth);
 }

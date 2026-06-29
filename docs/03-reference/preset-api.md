@@ -18,7 +18,7 @@
 当前约定是：
 
 ```ts
-(markdown, context) => string | Promise<string>
+(markdown, context) => string | Promise<string>;
 ```
 
 其中：

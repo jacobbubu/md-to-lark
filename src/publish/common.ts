@@ -1,10 +1,5 @@
 import path from 'node:path';
-import type {
-  LASTBlockNode,
-  LASTInlineMarks,
-  LASTTextualBlock,
-  LASTTextualBlockType,
-} from '../last/types.js';
+import type { LASTBlockNode, LASTInlineMarks, LASTTextualBlock, LASTTextualBlockType } from '../last/types.js';
 import { LAST_TEXTUAL_BLOCK_TYPE_SET } from '../last/textual-block-types.js';
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg']);
@@ -79,10 +74,7 @@ export function inferMediaKind(extension: string): 'image' | 'video' | 'audio' |
   return 'file';
 }
 
-export function shouldUsePreviewView(
-  extension: string,
-  mediaKind: 'image' | 'video' | 'audio' | 'file',
-): boolean {
+export function shouldUsePreviewView(extension: string, mediaKind: 'image' | 'video' | 'audio' | 'file'): boolean {
   if (mediaKind === 'video' || mediaKind === 'audio') return true;
   return PREVIEWABLE_FILE_EXTENSIONS.has(extension);
 }

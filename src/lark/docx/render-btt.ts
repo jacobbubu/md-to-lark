@@ -1,16 +1,8 @@
 import * as lark from '@larksuiteoapi/node-sdk';
 import { RateLimiter } from '../../shared/rate-limiter.js';
-import {
-  createDocumentChildren,
-  type DocxBlockEntry,
-  type LarkRequestOptions,
-} from './ops.js';
+import { createDocumentChildren, type DocxBlockEntry, type LarkRequestOptions } from './ops.js';
 import type { BTTNode } from '../../btt/types.js';
-import {
-  DEFAULT_MERMAID_RENDER_CONFIG,
-  type MermaidPatch,
-  type MermaidRenderConfig,
-} from './render-types.js';
+import { DEFAULT_MERMAID_RENDER_CONFIG, type MermaidPatch, type MermaidRenderConfig } from './render-types.js';
 import { applyCreatedBoardMermaid, applyCreatedFileBlock, applyCreatedImageBlock } from './render-post-process.js';
 import { renderCreatedTableNode } from './render-table.js';
 import {

@@ -266,8 +266,7 @@ test('clearDocumentContent deletes root children in batches and returns root id'
   const batchDeleteRequests = calls
     .filter((row) => row.method === 'docx.documentBlockChildren.batchDelete')
     .map(
-      (row) =>
-        ((row.request as { data?: { end_index?: number } }).data?.end_index as number | undefined) ?? Number.NaN,
+      (row) => ((row.request as { data?: { end_index?: number } }).data?.end_index as number | undefined) ?? Number.NaN,
     );
   assert.deepEqual(batchDeleteRequests, [50, 50, 20]);
 });
@@ -376,8 +375,11 @@ test('createDocumentChildren uses 9x9 base then expands for 9x10 table', async (
   const createCall = calls.find((row) => row.method === 'docx.documentBlockChildren.create');
   assert.ok(createCall);
   const createTable =
-    (((createCall?.request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ??
-      []) as Array<Record<string, unknown>>)[0] ?? {};
+    (
+      ((createCall?.request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ?? []) as Array<
+        Record<string, unknown>
+      >
+    )[0] ?? {};
   const createProperty = ((createTable.table as { property?: Record<string, unknown> })?.property ?? {}) as Record<
     string,
     unknown
@@ -388,10 +390,8 @@ test('createDocumentChildren uses 9x9 base then expands for 9x10 table', async (
 
   const batchUpdates = calls.filter((row) => row.method === 'docx.documentBlock.batchUpdate');
   assert.equal(batchUpdates.length, 1);
-  const requests =
-    ((batchUpdates[0]?.request as { data?: { requests?: Array<Record<string, unknown>> } }).data?.requests ?? []) as Array<
-      Record<string, unknown>
-    >;
+  const requests = ((batchUpdates[0]?.request as { data?: { requests?: Array<Record<string, unknown>> } }).data
+    ?.requests ?? []) as Array<Record<string, unknown>>;
   assert.equal(requests.length, 1);
   assert.deepEqual(requests[0], {
     block_id: 'tbl_1',
@@ -438,8 +438,11 @@ test('createDocumentChildren uses 9x9 base then expands for 10x9 table', async (
   const createCall = calls.find((row) => row.method === 'docx.documentBlockChildren.create');
   assert.ok(createCall);
   const createTable =
-    (((createCall?.request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ??
-      []) as Array<Record<string, unknown>>)[0] ?? {};
+    (
+      ((createCall?.request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ?? []) as Array<
+        Record<string, unknown>
+      >
+    )[0] ?? {};
   const createProperty = ((createTable.table as { property?: Record<string, unknown> })?.property ?? {}) as Record<
     string,
     unknown
@@ -450,10 +453,8 @@ test('createDocumentChildren uses 9x9 base then expands for 10x9 table', async (
 
   const batchUpdates = calls.filter((row) => row.method === 'docx.documentBlock.batchUpdate');
   assert.equal(batchUpdates.length, 1);
-  const requests =
-    ((batchUpdates[0]?.request as { data?: { requests?: Array<Record<string, unknown>> } }).data?.requests ?? []) as Array<
-      Record<string, unknown>
-    >;
+  const requests = ((batchUpdates[0]?.request as { data?: { requests?: Array<Record<string, unknown>> } }).data
+    ?.requests ?? []) as Array<Record<string, unknown>>;
   assert.equal(requests.length, 1);
   assert.deepEqual(requests[0], {
     block_id: 'tbl_1',
@@ -467,10 +468,8 @@ test('createDocumentChildren batches non-table siblings into one create request'
   let nextId = 1;
   const { client, calls } = createFakeClient({
     docxDocumentBlockChildrenCreate: async (request) => {
-      const children =
-        ((request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ?? []) as Array<
-          Record<string, unknown>
-        >;
+      const children = ((request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ??
+        []) as Array<Record<string, unknown>>;
       return {
         code: 0,
         data: {

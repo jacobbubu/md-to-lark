@@ -108,9 +108,7 @@ export async function publishMdToLark(
 
   const normalizedDocumentId = options.documentId ? normalizeDocumentId(options.documentId) : undefined;
   const resolveTargetDocumentId =
-    options.dryRun || normalizedDocumentId
-      ? undefined
-      : createFolderDocumentResolver(runtime, options);
+    options.dryRun || normalizedDocumentId ? undefined : createFolderDocumentResolver(runtime, options);
   const results: PublishMdResult[] = [];
 
   for (let index = 0; index < inputSet.markdownFiles.length; index += 1) {

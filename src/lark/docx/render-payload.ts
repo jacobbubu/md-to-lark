@@ -148,7 +148,10 @@ export function canUseElementsOnlyPatch(rawBlock: Record<string, unknown>): bool
   if (effectiveEntries.length === 0) return true;
 
   for (const [key, value] of effectiveEntries) {
-    if (key === 'align' && (value === 1 || value === 2 || value === 3 || value === 'left' || value === 'center' || value === 'right')) {
+    if (
+      key === 'align' &&
+      (value === 1 || value === 2 || value === 3 || value === 'left' || value === 'center' || value === 'right')
+    ) {
       continue;
     }
     return false;
@@ -340,7 +343,14 @@ export function getSourceBlockId(node: BTTNode, rawBlockRecord: Record<string, u
 }
 
 function isBatchSafeBlockType(blockType: number): boolean {
-  if (blockType === 1 || blockType === 23 || blockType === 27 || blockType === 31 || blockType === 32 || blockType === 43) {
+  if (
+    blockType === 1 ||
+    blockType === 23 ||
+    blockType === 27 ||
+    blockType === 31 ||
+    blockType === 32 ||
+    blockType === 43
+  ) {
     return false;
   }
   return true;

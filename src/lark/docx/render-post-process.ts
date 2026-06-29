@@ -72,7 +72,9 @@ export async function applyCreatedImageBlock(
     ...(typeof width === 'number' ? { width } : {}),
     ...(typeof proportionalHeight === 'number' ? { height: proportionalHeight } : {}),
     ...(image && typeof image.align === 'number' ? { align: image.align } : {}),
-    ...(image && toObjectRecord(image.caption) ? { caption: toObjectRecord(image.caption) as { content?: string } } : {}),
+    ...(image && toObjectRecord(image.caption)
+      ? { caption: toObjectRecord(image.caption) as { content?: string } }
+      : {}),
     ...(image && typeof image.scale === 'number' ? { scale: image.scale } : {}),
   };
 
@@ -111,7 +113,13 @@ async function resolveFileTargetBlockId(
       ? createdBlock.children[0].trim()
       : '';
   if (!fileTargetBlockId) {
-    const fetchedCreatedBlock = await getDocumentBlockById(client, documentId, createdBlockId, authOptions, docxLimiter);
+    const fetchedCreatedBlock = await getDocumentBlockById(
+      client,
+      documentId,
+      createdBlockId,
+      authOptions,
+      docxLimiter,
+    );
     fileTargetBlockId =
       fetchedCreatedBlock &&
       Array.isArray(fetchedCreatedBlock.children) &&
@@ -152,14 +160,28 @@ export async function applyCreatedFileBlock(
   );
 
   if (localPath) {
-    let fileToken = await uploadBinaryToNode(client, 'docx_file', fileTargetBlockId, localPath, authOptions, mediaLimiter);
+    let fileToken = await uploadBinaryToNode(
+      client,
+      'docx_file',
+      fileTargetBlockId,
+      localPath,
+      authOptions,
+      mediaLimiter,
+    );
     try {
       await replaceFileBlock(client, documentId, fileTargetBlockId, fileToken, authOptions, docxLimiter);
     } catch (error) {
       if (!isRelationMismatchError(error)) {
         throw error;
       }
-      fileToken = await uploadBinaryToNode(client, 'docx_file', fileTargetBlockId, localPath, authOptions, mediaLimiter);
+      fileToken = await uploadBinaryToNode(
+        client,
+        'docx_file',
+        fileTargetBlockId,
+        localPath,
+        authOptions,
+        mediaLimiter,
+      );
       await replaceFileBlock(client, documentId, fileTargetBlockId, fileToken, authOptions, docxLimiter);
     }
     return {

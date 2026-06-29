@@ -36,83 +36,83 @@
 
 ## 汇总表
 
-| 官方候选值 | 语言 | 仓库当前 alias | 仓库当前值 | 人工真实值 | 核对状态 | 备注 |
-|---:|---|---|---:|---:|---|---|
-| 1 | PlainText | `text`, `plaintext`, `plain_text` | 1 | 1 | confirmed | 真实回读与官方候选值一致 |
-| 2 | ABAP | — |  | 2 | confirmed | 真实回读与官方候选值一致 |
-| 3 | Ada | — |  | 3 | confirmed | 真实回读与官方候选值一致 |
-| 4 | Apache | — |  | 4 | confirmed | 真实回读与官方候选值一致 |
-| 5 | Apex | — |  | 5 | confirmed | 真实回读与官方候选值一致 |
-| 6 | Assembly Language | `assembly` | 6 | 6 | confirmed | 真实回读与官方候选值一致 |
-| 7 | Bash | `bash` | 7 | 7 | confirmed | 真实回读与官方候选值一致 |
-| 8 | CSharp | `csharp` | 8 | 8 | confirmed | 真实回读与官方候选值一致 |
-| 9 | C++ | `cpp` | 9 | 9 | confirmed | 真实回读与官方候选值一致 |
-| 10 | C | `c` | 10 | 10 | confirmed | 真实回读与官方候选值一致 |
-| 11 | COBOL | — |  | 11 | confirmed | 真实回读与官方候选值一致 |
-| 12 | CSS | `css` | 12 | 12 | confirmed | 真实回读与官方候选值一致 |
-| 13 | CoffeeScript | `coffee` | 13 | 13 | confirmed | 真实回读与官方候选值一致 |
-| 14 | D | — |  | 14 | confirmed | 真实回读与官方候选值一致 |
-| 15 | Dart | — |  | 15 | confirmed | 真实回读与官方候选值一致 |
-| 16 | Delphi | — |  | 16 | confirmed | 真实回读与官方候选值一致 |
-| 17 | Django | — |  | 17 | confirmed | 真实回读与官方候选值一致 |
-| 18 | Dockerfile | — |  | 18 | confirmed | 真实回读与官方候选值一致 |
-| 19 | Erlang | — |  | 19 | confirmed | 真实回读与官方候选值一致 |
-| 20 | Fortran | — |  | 20 | confirmed | 真实回读与官方候选值一致 |
-| 21 | FoxPro | — |  | 21 | confirmed | 真实回读与官方候选值一致 |
-| 22 | Go | `go` | 24 |  | pending | 官方候选值与仓库当前值冲突 |
-| 23 | Groovy | — |  | 23 | confirmed | 真实回读与官方候选值一致 |
-| 24 | HTML | `html` | 26 |  | pending | 官方候选值与仓库当前值冲突 |
-| 25 | HTMLBars | — |  | 25 | confirmed | 真实回读与官方候选值一致 |
-| 26 | HTTP | — |  | 26 | confirmed | 真实回读与官方候选值一致 |
-| 27 | Haskell | — |  | 27 | confirmed | 真实回读与官方候选值一致 |
-| 28 | JSON | `json` | 31 |  | pending | 官方候选值与仓库当前值冲突 |
-| 29 | Java | `java` | 32 |  | pending | 官方候选值与仓库当前值冲突 |
-| 30 | JavaScript | `javascript`, `js` | 33 |  | pending | 官方候选值与仓库当前值冲突 |
-| 31 | Julia | — |  | 31 | confirmed | 真实回读与官方候选值一致 |
-| 32 | Kotlin | `kotlin` | 35 |  | pending | 官方候选值与仓库当前值冲突 |
-| 33 | LateX | — |  | 33 | confirmed | 真实回读与官方候选值一致 |
-| 34 | Lisp | — |  | 34 | confirmed | 真实回读与官方候选值一致 |
-| 35 | Logo | — |  | 35 | confirmed | 真实回读与官方候选值一致 |
-| 36 | Lua | — |  | 36 | confirmed | 真实回读与官方候选值一致 |
-| 37 | MATLAB | — |  | 37 | confirmed | 真实回读与官方候选值一致 |
-| 38 | Makefile | — |  | 38 | confirmed | 真实回读与官方候选值一致 |
-| 39 | Markdown | `markdown`, `md` | 42 |  | pending | 官方候选值与仓库当前值冲突 |
-| 40 | Nginx | — |  | 40 | confirmed | 真实回读与官方候选值一致 |
-| 41 | Objective-C | `objectivec` | 44 |  | pending | 官方候选值与仓库当前值冲突 |
-| 42 | OpenEdgeABL | — |  | 42 | confirmed | 真实回读与官方候选值一致 |
-| 43 | PHP | `php` | 46 |  | pending | 官方候选值与仓库当前值冲突 |
-| 44 | Perl | `perl` | 47 |  | pending | 官方候选值与仓库当前值冲突 |
-| 45 | PostScript | — |  | 45 | confirmed | 真实回读与官方候选值一致 |
-| 46 | Power Shell | `powershell` | 49 |  | pending | 官方候选值与仓库当前值冲突 |
-| 47 | Prolog | — |  | 47 | confirmed | 真实回读与官方候选值一致 |
-| 48 | ProtoBuf | `protobuf` | 51 |  | pending | 官方候选值与仓库当前值冲突 |
-| 49 | Python | `python` | 52 |  | pending | 官方候选值与仓库当前值冲突 |
-| 50 | R | `r` | 53 |  | pending | 官方候选值与仓库当前值冲突 |
-| 51 | RPG | — |  | 51 | confirmed | 真实回读与官方候选值一致 |
-| 52 | Ruby | `ruby` | 55 |  | pending | 官方候选值与仓库当前值冲突 |
-| 53 | Rust | `rust` | 56 |  | pending | 官方候选值与仓库当前值冲突 |
-| 54 | SAS | — |  | 54 | confirmed | 真实回读与官方候选值一致 |
-| 55 | SCSS | — |  | 55 | confirmed | 真实回读与官方候选值一致 |
-| 56 | SQL | `sql` | 60 |  | pending | 官方候选值与仓库当前值冲突 |
-| 57 | Scala | `scala` | 61 |  | pending | 官方候选值与仓库当前值冲突 |
-| 58 | Scheme | — |  | 58 | confirmed | 真实回读与官方候选值一致 |
-| 59 | Scratch | — |  | 59 | confirmed | 真实回读与官方候选值一致 |
-| 60 | Shell | `shell` | 7 |  | pending | 官方候选值与仓库当前值冲突 |
-| 61 | Swift | `swift` | 64 |  | pending | 官方候选值与仓库当前值冲突 |
-| 62 | Thrift | — |  | 62 | confirmed | 真实回读与官方候选值一致 |
-| 63 | TypeScript | `typescript`, `ts` | 66 |  | pending | 官方候选值与仓库当前值冲突 |
-| 64 | VBScript | — |  | 64 | confirmed | 真实回读与官方候选值一致 |
-| 65 | Visual Basic | — |  | 65 | confirmed | 真实回读与官方候选值一致 |
-| 66 | XML | `xml` | 69 |  | pending | 官方候选值与仓库当前值冲突 |
-| 67 | YAML | `yaml` | 70 |  | pending | 官方候选值与仓库当前值冲突 |
-| 68 | CMake | — |  | 68 | confirmed | 真实回读与官方候选值一致 |
-| 69 | Diff | — |  | 69 | confirmed | 真实回读与官方候选值一致 |
-| 70 | Gherkin | — |  | 70 | confirmed | 真实回读与官方候选值一致 |
-| 71 | GraphQL | — |  | 71 | confirmed | 真实回读结果为 71，对应 GraphQL |
-| 72 | OpenGL Shading Language | — |  | 72 | confirmed | 真实回读与官方候选值一致 |
-| 73 | Properties | — |  | 73 | confirmed | 真实回读与官方候选值一致 |
-| 74 | Solidity | — |  | 74 | confirmed | 真实回读与官方候选值一致 |
-| 75 | TOML | `toml` | 77 |  | pending | 官方候选值与仓库当前值冲突；你口头反馈真实值可能不是 75 |
+| 官方候选值 | 语言                    | 仓库当前 alias                    | 仓库当前值 | 人工真实值 | 核对状态  | 备注                                                    |
+| ---------: | ----------------------- | --------------------------------- | ---------: | ---------: | --------- | ------------------------------------------------------- |
+|          1 | PlainText               | `text`, `plaintext`, `plain_text` |          1 |          1 | confirmed | 真实回读与官方候选值一致                                |
+|          2 | ABAP                    | —                                 |            |          2 | confirmed | 真实回读与官方候选值一致                                |
+|          3 | Ada                     | —                                 |            |          3 | confirmed | 真实回读与官方候选值一致                                |
+|          4 | Apache                  | —                                 |            |          4 | confirmed | 真实回读与官方候选值一致                                |
+|          5 | Apex                    | —                                 |            |          5 | confirmed | 真实回读与官方候选值一致                                |
+|          6 | Assembly Language       | `assembly`                        |          6 |          6 | confirmed | 真实回读与官方候选值一致                                |
+|          7 | Bash                    | `bash`                            |          7 |          7 | confirmed | 真实回读与官方候选值一致                                |
+|          8 | CSharp                  | `csharp`                          |          8 |          8 | confirmed | 真实回读与官方候选值一致                                |
+|          9 | C++                     | `cpp`                             |          9 |          9 | confirmed | 真实回读与官方候选值一致                                |
+|         10 | C                       | `c`                               |         10 |         10 | confirmed | 真实回读与官方候选值一致                                |
+|         11 | COBOL                   | —                                 |            |         11 | confirmed | 真实回读与官方候选值一致                                |
+|         12 | CSS                     | `css`                             |         12 |         12 | confirmed | 真实回读与官方候选值一致                                |
+|         13 | CoffeeScript            | `coffee`                          |         13 |         13 | confirmed | 真实回读与官方候选值一致                                |
+|         14 | D                       | —                                 |            |         14 | confirmed | 真实回读与官方候选值一致                                |
+|         15 | Dart                    | —                                 |            |         15 | confirmed | 真实回读与官方候选值一致                                |
+|         16 | Delphi                  | —                                 |            |         16 | confirmed | 真实回读与官方候选值一致                                |
+|         17 | Django                  | —                                 |            |         17 | confirmed | 真实回读与官方候选值一致                                |
+|         18 | Dockerfile              | —                                 |            |         18 | confirmed | 真实回读与官方候选值一致                                |
+|         19 | Erlang                  | —                                 |            |         19 | confirmed | 真实回读与官方候选值一致                                |
+|         20 | Fortran                 | —                                 |            |         20 | confirmed | 真实回读与官方候选值一致                                |
+|         21 | FoxPro                  | —                                 |            |         21 | confirmed | 真实回读与官方候选值一致                                |
+|         22 | Go                      | `go`                              |         24 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         23 | Groovy                  | —                                 |            |         23 | confirmed | 真实回读与官方候选值一致                                |
+|         24 | HTML                    | `html`                            |         26 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         25 | HTMLBars                | —                                 |            |         25 | confirmed | 真实回读与官方候选值一致                                |
+|         26 | HTTP                    | —                                 |            |         26 | confirmed | 真实回读与官方候选值一致                                |
+|         27 | Haskell                 | —                                 |            |         27 | confirmed | 真实回读与官方候选值一致                                |
+|         28 | JSON                    | `json`                            |         31 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         29 | Java                    | `java`                            |         32 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         30 | JavaScript              | `javascript`, `js`                |         33 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         31 | Julia                   | —                                 |            |         31 | confirmed | 真实回读与官方候选值一致                                |
+|         32 | Kotlin                  | `kotlin`                          |         35 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         33 | LateX                   | —                                 |            |         33 | confirmed | 真实回读与官方候选值一致                                |
+|         34 | Lisp                    | —                                 |            |         34 | confirmed | 真实回读与官方候选值一致                                |
+|         35 | Logo                    | —                                 |            |         35 | confirmed | 真实回读与官方候选值一致                                |
+|         36 | Lua                     | —                                 |            |         36 | confirmed | 真实回读与官方候选值一致                                |
+|         37 | MATLAB                  | —                                 |            |         37 | confirmed | 真实回读与官方候选值一致                                |
+|         38 | Makefile                | —                                 |            |         38 | confirmed | 真实回读与官方候选值一致                                |
+|         39 | Markdown                | `markdown`, `md`                  |         42 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         40 | Nginx                   | —                                 |            |         40 | confirmed | 真实回读与官方候选值一致                                |
+|         41 | Objective-C             | `objectivec`                      |         44 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         42 | OpenEdgeABL             | —                                 |            |         42 | confirmed | 真实回读与官方候选值一致                                |
+|         43 | PHP                     | `php`                             |         46 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         44 | Perl                    | `perl`                            |         47 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         45 | PostScript              | —                                 |            |         45 | confirmed | 真实回读与官方候选值一致                                |
+|         46 | Power Shell             | `powershell`                      |         49 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         47 | Prolog                  | —                                 |            |         47 | confirmed | 真实回读与官方候选值一致                                |
+|         48 | ProtoBuf                | `protobuf`                        |         51 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         49 | Python                  | `python`                          |         52 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         50 | R                       | `r`                               |         53 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         51 | RPG                     | —                                 |            |         51 | confirmed | 真实回读与官方候选值一致                                |
+|         52 | Ruby                    | `ruby`                            |         55 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         53 | Rust                    | `rust`                            |         56 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         54 | SAS                     | —                                 |            |         54 | confirmed | 真实回读与官方候选值一致                                |
+|         55 | SCSS                    | —                                 |            |         55 | confirmed | 真实回读与官方候选值一致                                |
+|         56 | SQL                     | `sql`                             |         60 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         57 | Scala                   | `scala`                           |         61 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         58 | Scheme                  | —                                 |            |         58 | confirmed | 真实回读与官方候选值一致                                |
+|         59 | Scratch                 | —                                 |            |         59 | confirmed | 真实回读与官方候选值一致                                |
+|         60 | Shell                   | `shell`                           |          7 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         61 | Swift                   | `swift`                           |         64 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         62 | Thrift                  | —                                 |            |         62 | confirmed | 真实回读与官方候选值一致                                |
+|         63 | TypeScript              | `typescript`, `ts`                |         66 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         64 | VBScript                | —                                 |            |         64 | confirmed | 真实回读与官方候选值一致                                |
+|         65 | Visual Basic            | —                                 |            |         65 | confirmed | 真实回读与官方候选值一致                                |
+|         66 | XML                     | `xml`                             |         69 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         67 | YAML                    | `yaml`                            |         70 |            | pending   | 官方候选值与仓库当前值冲突                              |
+|         68 | CMake                   | —                                 |            |         68 | confirmed | 真实回读与官方候选值一致                                |
+|         69 | Diff                    | —                                 |            |         69 | confirmed | 真实回读与官方候选值一致                                |
+|         70 | Gherkin                 | —                                 |            |         70 | confirmed | 真实回读与官方候选值一致                                |
+|         71 | GraphQL                 | —                                 |            |         71 | confirmed | 真实回读结果为 71，对应 GraphQL                         |
+|         72 | OpenGL Shading Language | —                                 |            |         72 | confirmed | 真实回读与官方候选值一致                                |
+|         73 | Properties              | —                                 |            |         73 | confirmed | 真实回读与官方候选值一致                                |
+|         74 | Solidity                | —                                 |            |         74 | confirmed | 真实回读与官方候选值一致                                |
+|         75 | TOML                    | `toml`                            |         77 |            | pending   | 官方候选值与仓库当前值冲突；你口头反馈真实值可能不是 75 |
 
 ## 代码片段附录
 

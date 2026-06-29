@@ -1,12 +1,7 @@
 import type { BTTDocument } from '../btt/types.js';
 import type { LarkDocxBlock } from '../lark/types.js';
 import type { LASTBlockId, LASTBlockNode, LASTDocument } from '../last/types.js';
-import {
-  buildLASTIndexes,
-  flattenTreeBlocks,
-  fromRawBlockToLAST,
-  type InlineCounter,
-} from './codec-btt-to-last.js';
+import { buildLASTIndexes, flattenTreeBlocks, fromRawBlockToLAST, type InlineCounter } from './codec-btt-to-last.js';
 import { normalizeDocumentIdToLAST } from './codec-last-to-btt.js';
 
 export function convertBTTToLAST(bttDoc: BTTDocument): LASTDocument {

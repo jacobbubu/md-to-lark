@@ -3,10 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import {
-  getScaledHeightForLocalImage,
-  readLocalImageDimensions,
-} from '../src/shared/image-metadata.js';
+import { getScaledHeightForLocalImage, readLocalImageDimensions } from '../src/shared/image-metadata.js';
 
 test('readLocalImageDimensions reads svg width and height attributes', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'md-to-lark-image-metadata-'));

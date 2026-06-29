@@ -264,10 +264,7 @@ test('publishMdToLark dry-run applies multiple presets in order', async (t) => {
   });
 
   const cacheEntries = await readdir(path.join(dir, 'cache'), { withFileTypes: true });
-  const stageRoot = path.join(
-    path.join(dir, 'cache'),
-    cacheEntries.find((entry) => entry.isDirectory())?.name ?? '',
-  );
+  const stageRoot = path.join(path.join(dir, 'cache'), cacheEntries.find((entry) => entry.isDirectory())?.name ?? '');
   const sourcePreset = await readFile(path.join(stageRoot, '00-source', 'preset.md'), 'utf8');
   const sourceMeta = JSON.parse(await readFile(path.join(stageRoot, '00-source', 'meta.json'), 'utf8')) as {
     preset: string | null;

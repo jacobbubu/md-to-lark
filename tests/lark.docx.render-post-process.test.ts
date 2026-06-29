@@ -189,7 +189,9 @@ test('applyCreatedImageBlock preserves width and align in replace_image request'
     token: 'img_uploaded_token',
   });
   const request = batchUpdateCalls[0] as {
-    data?: { requests?: Array<{ replace_image?: { token?: string; width?: number; height?: number; align?: number } }> };
+    data?: {
+      requests?: Array<{ replace_image?: { token?: string; width?: number; height?: number; align?: number } }>;
+    };
   };
   assert.equal(request.data?.requests?.[0]?.replace_image?.token, 'img_uploaded_token');
   assert.equal(request.data?.requests?.[0]?.replace_image?.width, 1000);

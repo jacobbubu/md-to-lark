@@ -117,10 +117,8 @@ test('renderBTTToDocument batches sibling leaf text blocks under same parent', a
       documentBlockChildren: {
         create: async (request: unknown) => {
           createCalls.push(request);
-          const children =
-            ((request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ?? []) as Array<
-              Record<string, unknown>
-            >;
+          const children = ((request as { data?: { children?: Array<Record<string, unknown>> } }).data?.children ??
+            []) as Array<Record<string, unknown>>;
           return {
             code: 0,
             data: {
@@ -191,8 +189,7 @@ test('renderBTTToDocument batches sibling leaf text blocks under same parent', a
   );
 
   assert.equal(createCalls.length, 1);
-  const requestChildren =
-    ((createCalls[0] as { data?: { children?: unknown[] } }).data?.children as unknown[]) ?? [];
+  const requestChildren = ((createCalls[0] as { data?: { children?: unknown[] } }).data?.children as unknown[]) ?? [];
   assert.equal(requestChildren.length, 3);
 });
 

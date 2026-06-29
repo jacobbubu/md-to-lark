@@ -58,7 +58,9 @@ function applyRawBlockPatch(
     file.media_kind = asset.mediaKind;
   }
   if (typeof file.view_type !== 'number') {
-    file.view_type = shouldUsePreviewView(path.extname(asset.fileName).toLowerCase(), asset.mediaKind ?? 'file') ? 2 : 1;
+    file.view_type = shouldUsePreviewView(path.extname(asset.fileName).toLowerCase(), asset.mediaKind ?? 'file')
+      ? 2
+      : 1;
   }
   rawBlock.file = file;
 }

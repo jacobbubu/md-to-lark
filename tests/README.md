@@ -7,6 +7,7 @@
 ## 测试文件与分层
 
 `commands.*.test.ts`：命令层（参数解析、输入分辨、标题策略、发布编排、preset 与兼容 bridge）
+
 - `commands.publish-md.args.test.ts`
 - `commands.publish-md.input-resolver.test.ts`
 - `commands.publish-md.title-policy.test.ts`
@@ -15,19 +16,23 @@
 - `commands.publish-md.command.test.ts`
 
 `publish.*.test.ts`：发布前运行时与单文件执行层
+
 - `publish.runtime.test.ts`
 - `publish.stage-cache.test.ts`
 - `publish.process-file.test.ts`
 
 `pipeline.*.test.ts`：pipeline 与 markdown 转换层
+
 - `pipeline.prepare-markdown.test.ts`
 - `pipeline.md-hast-last.test.ts`
 
 `cli.*.test.ts`：CLI 启动与打包输出层
+
 - `cli.publish-md-to-lark.test.ts`
 - `cli.dist.publish-md-to-lark.test.ts`
 
 `lark.*.test.ts`：Lark 适配与写入层
+
 - `lark.client-config.test.ts`
 - `lark.docx.ops.test.ts`
 - `lark.docx.render-btt.test.ts`
@@ -37,10 +42,12 @@
 - `publish.image-width.live.test.ts`
 
 `shared.*.test.ts`：共享基础能力
+
 - `shared.retry.test.ts`
 - `shared.rate-limiter.test.ts`
 
 模型层测试
+
 - `last.api-basics.test.ts`
 
 ## 常用命令
@@ -69,6 +76,7 @@
 ## 故障定位优先级
 
 优先查看主入口：
+
 - 参数或用法异常：`tests/commands.publish-md.args.test.ts`、`tests/cli.publish-md-to-lark.test.ts`
 - 输入识别错误（单文件/目录/大小写 `.MD`）：`tests/commands.publish-md.input-resolver.test.ts`
 - 标题、preset、预处理行为异常：`tests/commands.publish-md.title-policy.test.ts`、`tests/commands.publish-md.preset-loader.test.ts`、`tests/pipeline.prepare-markdown.test.ts`

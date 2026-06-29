@@ -4,11 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { publishMdToLark } from '../src/commands/publish-md/command.js';
 import { buildE2ETitle, getLiveE2ESkipReason, loadLiveE2EConfig } from './helpers/live-env.js';
-import {
-  createLiveLarkContext,
-  waitForDocumentIdByTitle,
-  waitForLiveDocumentSnapshot,
-} from './helpers/live-lark.js';
+import { createLiveLarkContext, waitForDocumentIdByTitle, waitForLiveDocumentSnapshot } from './helpers/live-lark.js';
 import { createTempDir, withSilencedConsole } from './helpers/test-support.js';
 
 test('live publish renders mermaid as text-drawing when configured', async (t) => {
@@ -24,11 +20,7 @@ test('live publish renders mermaid as text-drawing when configured', async (t) =
 
   const markdownPath = path.join(dir, 'mermaid.md');
   const title = buildE2ETitle(live, 'mermaid-text-drawing');
-  await writeFile(
-    markdownPath,
-    '# Mermaid Example\n\n```mermaid\nflowchart TD\nA-->B\n```\n',
-    'utf8',
-  );
+  await writeFile(markdownPath, '# Mermaid Example\n\n```mermaid\nflowchart TD\nA-->B\n```\n', 'utf8');
 
   await withSilencedConsole(async () => {
     await publishMdToLark(

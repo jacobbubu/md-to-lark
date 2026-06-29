@@ -120,7 +120,7 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 transform 函数签名是：
 
 ```ts
-(markdown, context) => string | Promise<string>
+(markdown, context) => string | Promise<string>;
 ```
 
 `context` 里可用的信息包括：

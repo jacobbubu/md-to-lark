@@ -1,6 +1,7 @@
 > **核心结论：** Unitree 正在沿着 BYD 和 DJI 走过的路线，把最贵也最难做的执行器做到规模化，再把四足机器人时代积累下来的成本、供应链和制造能力迁移到人形机器人上。文章给出的证据是，G1 的成本与毛利、制造垂直整合程度，以及轻量仓储场景中的真实部署数据，都已经逼近甚至跨过“可用”门槛，这意味着一旦放量，全球机器人产业的价格体系与供应链主导权都可能被它重写。
 
 **有趣事实：**
+
 - 据文中消息，Unitree 可能会在未来几周内交付第 10,000 台人形机器人。
 - 过去 12-18 个月里，Unitree 把 G1 税前售价从 5 万美元以上压到 2.73 万美元，作者估算其毛利率仍可达到 67%。
 - Unitree 入门级四足机器人的价格在 6 年内下跌了 94%-96%，从 2018 年 Laikago 的 4.5 万美元降到如今 Go2 的 1,600-2,800 美元。
@@ -57,7 +58,7 @@ Unitree 的 IPO，标志着机器人时代真正开始。它正在解锁市场�
 
 ![](assets/image-4.jpg)
 
-_来源：[BYD](https://commons.wikimedia.org/wiki/File:2023_%D0%92YD_Seagull_(front).jpg)_
+_来源：[BYD](https://commons.wikimedia.org/wiki/File:2023_%D0%92YD*Seagull*(front).jpg)\_
 
 BYD 最初聚焦的是电芯。电池曾可占到一辆电动车 BoM 的 30%-40%（现在占比更低了，这得感谢 BYD）。BYD 成立于 1994 年，最初生产的是日本老牌厂商因毒性问题退出后留下的电池电芯。它花了将近 10 年打磨产品，直到 2011 年才进入电动车领域，起初也只是一个小众玩家。2011 年 10 月，BYD 把第一款纯电动车 e6 推向[中国市场](https://web.archive.org/web/20111101200501/http://www.bydenergy.com/bydenergy/energy/News%20Center/News/78.html)时，中国全年电动车销量只有 8,159 辆，仅占[新车销量的 0.04%](https://en.wikipedia.org/wiki/Plug-in_electric_vehicles_in_China)。当时根本不存在真正的电动车市场，但 BYD 帮着把这个市场做出来了。
 
@@ -89,7 +90,7 @@ SemiAnalysis 是一家读者支持型出版物。若想接收新文章并支持�
 
 DJI 开创了一套不同于 BYD 的打法，而 Unitree 今天走的正是这条路：从研究者/爱好者这个滩头阵地起步，用一个质量还不算高的产品打开市场。
 
-在 2013 年，“好用的消费级无人机”还不是一个品类。[Parrot 的 AR.Drone](https://arstechnica.com/gadgets/2013/03/esa-launches-drone-app-to-crowdsource-flight-data/)，也就是当时的领先产品，拿到的是 2010 年 CES 的 *[Electronic Gaming Hardware](https://web.archive.org/web/20110416073134/http://www.gamerlive.tv/article/ces-2010-hottest-iphone-game-world)* 奖项，还和增强现实空战游戏一起发售。这款无人机没有相机防抖、没有 GPS，只能拍 640x480p 的照片和视频。任何真正想要一台有用的飞行相机的人，只有两个选择：要么花 [19,995 美元买一台 Draganflyer X6](https://hpisavagex46.wordpress.com/2011/01/24/ubercool-inventions-draganflyer-x6-uav-helicopter-aerial-video-platform/)，要么从不同供应商那里拼凑机架、电机、flight controllers（飞控）和 gimbals（稳定器），光零件就要[花到 1,200 美元](https://hackaday.com/2011/07/27/how-to-build-your-own-quadcopter-step-by-step/)，再搭上几十个小时的装配与 PID（控制器）调参，而结果往往是代价高昂的坠机。
+在 2013 年，“好用的消费级无人机”还不是一个品类。[Parrot 的 AR.Drone](https://arstechnica.com/gadgets/2013/03/esa-launches-drone-app-to-crowdsource-flight-data/)，也就是当时的领先产品，拿到的是 2010 年 CES 的 _[Electronic Gaming Hardware](https://web.archive.org/web/20110416073134/http://www.gamerlive.tv/article/ces-2010-hottest-iphone-game-world)_ 奖项，还和增强现实空战游戏一起发售。这款无人机没有相机防抖、没有 GPS，只能拍 640x480p 的照片和视频。任何真正想要一台有用的飞行相机的人，只有两个选择：要么花 [19,995 美元买一台 Draganflyer X6](https://hpisavagex46.wordpress.com/2011/01/24/ubercool-inventions-draganflyer-x6-uav-helicopter-aerial-video-platform/)，要么从不同供应商那里拼凑机架、电机、flight controllers（飞控）和 gimbals（稳定器），光零件就要[花到 1,200 美元](https://hackaday.com/2011/07/27/how-to-build-your-own-quadcopter-step-by-step/)，再搭上几十个小时的装配与 PID（控制器）调参，而结果往往是代价高昂的坠机。
 
 ![](assets/image-7.jpg)
 
@@ -164,7 +165,7 @@ _来源：[Leaderdrive](https://www.leaderdrive.com/product/list-7-1.html)_
 
 ## 在 2024 年，它们的人形机器人并不算好
 
-*为简洁起见，本文将 QDD 用来指代“无刷直流电机 + 低减速比行星齿轮箱”的组合，典型减速比为个位数到 20:1 以内，同时仍能提供足够的[可反驱性](https://irisdynamics.com/articles/forcefeedback-in-robotics)；不过也请注意，[命名上仍有争议](https://robot-daycare.com/posts/actuation_series_1/)。*
+_为简洁起见，本文将 QDD 用来指代“无刷直流电机 + 低减速比行星齿轮箱”的组合，典型减速比为个位数到 20:1 以内，同时仍能提供足够的[可反驱性](https://irisdynamics.com/articles/forcefeedback-in-robotics)；不过也请注意，[命名上仍有争议](https://robot-daycare.com/posts/actuation_series_1/)。_
 
 先说清楚一点：DJI 和 BYD 之所以能打开市场，是因为它们的产品**真的能用**，而 H1 和最初的 G1 在刚出货时**并不好用**。只要用户尝试把它们推向真实工作，电机往往就会过热。G1 在双臂完全伸直的情况下，只能举着 2 kg 的载荷，也就是一瓶 2 升汽水，撑几秒钟，然后就必须强制冷却。若是同样的 2-3 kg，但手臂保持弯曲或回收状态，则大概只能持续 2-3 分钟，正如下图所示。
 
@@ -239,7 +240,7 @@ Unitree 没有去垂直化整条长达几十年的学习曲线，而是选择了
 
 ## 从“烧坏”到轻量任务
 
-现在，Unitree 已经把 G1 及其执行器迭代到足以胜任一些虽小但真实存在的任务，已经到了 *伸手可及* 的范围。双臂弯曲时，G1 可以连续工作 10-15 分钟以上并搬运 5 kg，相比我们最初的数据，载荷大约翻了 2 倍，持续时间大约翻了 5 倍！在双臂完全伸直时，5 kg（大致相当于一个保龄球）也能维持约 1 分钟，之后才会触及热极限。即便对人类来说，这也已经算锻炼了。但 Unitree 距离“可行”的人形机器人到底还有多远？
+现在，Unitree 已经把 G1 及其执行器迭代到足以胜任一些虽小但真实存在的任务，已经到了 _伸手可及_ 的范围。双臂弯曲时，G1 可以连续工作 10-15 分钟以上并搬运 5 kg，相比我们最初的数据，载荷大约翻了 2 倍，持续时间大约翻了 5 倍！在双臂完全伸直时，5 kg（大致相当于一个保龄球）也能维持约 1 分钟，之后才会触及热极限。即便对人类来说，这也已经算锻炼了。但 Unitree 距离“可行”的人形机器人到底还有多远？
 
 ![](assets/image-19.jpg)
 
@@ -257,7 +258,7 @@ _来源：[ExtremControl](https://owenowl.github.io/extremcontrol/)_
 
 如果不再盯着那些表演性质的后空翻，Unitree 其实已经能够完成“有用的工作”。我们在这里只做一个不穷尽的定义：
 
-*在企业中执行、能够产生某种经济产出的任务，例如分拣箱子；或者为了减轻人类体力负担而执行的任务，例如叠衣服。*
+_在企业中执行、能够产生某种经济产出的任务，例如分拣箱子；或者为了减轻人类体力负担而执行的任务，例如叠衣服。_
 
 那么，这些 Unitree 现在到底在做什么？本质上，就是把箱子或物品从 A 点搬到 B 点。目前多是轻量物料搬运，比如电商 tote（周转箱）处理，载荷在 3-5 kg 以下，甚至只是搬运空箱或空 tote。
 
@@ -267,7 +268,7 @@ _来源：[ExtremControl](https://owenowl.github.io/extremcontrol/)_
 
 # Unitree 正在跨过部署可行性门槛
 
-“*感谢 [Adamo](https://adamohq.com/) 帮助我们进一步理解远程操控部署！*”
+“_感谢 [Adamo](https://adamohq.com/) 帮助我们进一步理解远程操控部署！_”
 
 我们在[Levels of Autonomy 论文](https://newsletter.semianalysis.com/p/robotics-levels-of-autonomy)中已经深入讨论过人形机器人的经济性，这里我们则专门为 Unitree 做一遍完整计算。以 Agility Robotics 的（非常出色的）任务为基线，再代入 Unitree 的参数，我们发现 Unitree **目前已经低于** 人类每小时 30 美元的人工成本。
 

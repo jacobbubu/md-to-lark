@@ -7,8 +7,7 @@ const releaseConfig = require('../release.config.cjs');
 
 function getPluginConfig(name: string) {
   const plugin = releaseConfig.plugins.find(
-    (entry: string | [string, Record<string, unknown>]) =>
-      Array.isArray(entry) && entry[0] === name,
+    (entry: string | [string, Record<string, unknown>]) => Array.isArray(entry) && entry[0] === name,
   );
 
   assert.ok(plugin, `expected semantic-release plugin ${name} to be configured`);

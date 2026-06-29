@@ -136,8 +136,8 @@ https://x.com/i/status/2024415812363440151
 | ---------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | 小图（原始宽度 < 200） | ![tiny](./assets/tiny.png)                                                 | [普通链接应按文本宽度计算](https://example.com/docs)                               |
 | 大图（原始宽度 > 200） | ![architecture](./assets/medium.png)                                       | [Figma iframe 链接](https://www.figma.com/file/LKQ4FJ4bTnCSjedbRpk931/Sample-File) |
-| 视频附件（mp4）        | [Demo Video](./assets/sample.mp4)                      | https://example.com/raw-url                                                        |
-| 音频附件（mp3）        | [Demo Audio](./assets/sample.mp3)                      | [普通链接](https://example.com/audio-doc)                                          |
+| 视频附件（mp4）        | [Demo Video](./assets/sample.mp4)                                          | https://example.com/raw-url                                                        |
+| 音频附件（mp3）        | [Demo Audio](./assets/sample.mp3)                                          | [普通链接](https://example.com/audio-doc)                                          |
 | iframe（Bilibili）     | [Bilibili](https://www.bilibili.com/video/BV1GJ411x7h7)                    | 用于验证 iframe provider 识别                                                      |
 | iframe（Figma）        | [Figma Raw](https://www.figma.com/file/LKQ4FJ4bTnCSjedbRpk931/Sample-File) | 用于验证单独链接转 iframe                                                          |
 
@@ -151,7 +151,7 @@ https://x.com/i/status/2024415812363440151
 | 不可识别链接（单独）      | [Project Docs](https://example.com/docs/alpha?from=table)                                                                        | 作为普通链接文本，不转 iframe/file/image         |
 | 长文本 + 图片（同单元格） | 跨地域增量同步与校验，需处理脏数据修复、断点续传和链路抖动。<br><br>![tiny](./assets/tiny.png)                                   | 混排场景：同一格既有长文本又有图片               |
 | 裸 URL + 文本             | 参考地址 https://x.com/i/status/2024415812363440151 （说明）                                                                     | 含普通文本，整体按文本处理                       |
-| 附件链接 + 说明文字       | 录像文件：[Demo Video](./assets/sample.mp4)（仅回放）                                                        | 非“单独一项”，按文本链接处理                     |
+| 附件链接 + 说明文字       | 录像文件：[Demo Video](./assets/sample.mp4)（仅回放）                                                                            | 非“单独一项”，按文本链接处理                     |
 | 长文本 + 不可识别裸链接   | 该列用于拉伸宽度并混入 URL：https://example.com/very/long/path/for/width/measurement?x=1&y=2                                     | 按纯文本测宽（含链接字符）                       |
 
 # 6. Markdown Todo 示例

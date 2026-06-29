@@ -635,7 +635,8 @@ export async function patchTextBlockElements(
 ): Promise<void> {
   await limiter.wait();
   let response: unknown;
-  const operationName = align === undefined ? 'docx.documentBlock.patch(update_text_elements)' : 'docx.documentBlock.patch(update_text)';
+  const operationName =
+    align === undefined ? 'docx.documentBlock.patch(update_text_elements)' : 'docx.documentBlock.patch(update_text)';
   const data =
     align === undefined
       ? {

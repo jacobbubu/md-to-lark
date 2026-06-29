@@ -49,8 +49,16 @@ export function getLiveE2ESkipReason(): string {
 }
 
 export function buildE2ETitle(config: LiveE2EConfig, slug: string): string {
-  const normalizedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'case';
-  const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  const normalizedSlug =
+    slug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'case';
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, '')
+    .slice(0, 14);
   const nonce = Math.random().toString(36).slice(2, 8);
   return `${config.titlePrefix}-${timestamp}-${normalizedSlug}-${nonce}`;
 }
