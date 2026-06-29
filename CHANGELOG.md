@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/jacobbubu/md-to-lark/compare/v1.4.11...v1.5.0) (2026-06-29)
+
+
+### Features
+
+* add opt-in single-dollar math parsing ([884d333](https://github.com/jacobbubu/md-to-lark/commit/884d33316d81d410e6268cef323273d4ef5d9a6b))
+
 ## [1.4.11](https://github.com/jacobbubu/md-to-lark/compare/v1.4.10...v1.4.11) (2026-06-23)
 
 ### Bug Fixes
