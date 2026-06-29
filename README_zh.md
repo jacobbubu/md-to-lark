@@ -112,6 +112,7 @@ preset、Mermaid 和阶段产物：
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
+npm run publish:md -- --input ./paper.md --single-dollar-text-math --dry-run
 npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./source-assets --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
@@ -175,6 +176,7 @@ npm run test:e2e:watch
 - 本地附件/图片识别与真实上传
 - 远程图片下载与独立 URL 预处理
 - Mermaid `text-drawing` 和 `board` 两条输出路径
+- 面向论文/LaTeX 密集内容的单美元行内公式显式开启选项
 - 表格列宽启发式与数字列右对齐
 - 中文 Markdown 格式化 preset（`zh-format`）
 - CLI 和程序化调用都支持按顺序组合多个 preset

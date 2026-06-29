@@ -1,14 +1,20 @@
 import type { Element, Parent, Root, RootContent, Text } from 'hast';
-import { markdownToHast } from '../pipeline/markdown/md-to-hast.js';
+import { markdownToHast, type MarkdownToHastOptions } from '../pipeline/markdown/md-to-hast.js';
 
-export interface MarkdownTerminalRenderOptions {
+export interface MarkdownTerminalRenderOptions extends MarkdownToHastOptions {
   color?: boolean;
   sectionGapLines?: number;
   showHeader?: boolean;
 }
 
+interface ResolvedMarkdownTerminalRenderOptions {
+  color: boolean;
+  sectionGapLines: number;
+  showHeader: boolean;
+}
+
 interface RenderContext {
-  options: Required<MarkdownTerminalRenderOptions>;
+  options: ResolvedMarkdownTerminalRenderOptions;
   lines: string[];
 }
 
@@ -416,6 +422,8 @@ export async function renderMarkdownToTerminal(
   markdown: string,
   options: MarkdownTerminalRenderOptions = {},
 ): Promise<string> {
-  const hast = await markdownToHast(markdown);
+  const parseOptions: MarkdownToHastOptions =
+    options.singleDollarTextMath === undefined ? {} : { singleDollarTextMath: options.singleDollarTextMath };
+  const hast = await markdownToHast(markdown, parseOptions);
   return renderHASTToTerminal(hast, options);
 }

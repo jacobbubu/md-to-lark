@@ -14,6 +14,7 @@ import {
 } from '../lark/index.js';
 import type { LarkRequestOptions } from '../lark/docx/ops.js';
 import type { MermaidRenderConfig } from '../lark/docx/render-types.js';
+import type { MarkdownToHastOptions } from '../pipeline/markdown/md-to-hast.js';
 import type { PrepareMarkdownOptions } from '../pipeline/markdown/prepare-markdown.js';
 import { RateLimiter } from '../shared/rate-limiter.js';
 
@@ -63,6 +64,8 @@ function normalizeOptionalPath(value: string | undefined): string | undefined {
 
 export interface PublishPrepareRuntimeConfig extends Omit<PrepareMarkdownOptions, 'prepareDir'> {}
 
+export interface PublishMarkdownParseRuntimeConfig extends MarkdownToHastOptions {}
+
 export interface PublishRuntime {
   env: NodeJS.ProcessEnv;
   markdownPresets: LoadedMarkdownPreset[];
@@ -82,6 +85,7 @@ export interface PublishRuntime {
   downloadRemoteImages: boolean;
   ytDlpPath?: string;
   mermaidRenderConfig: MermaidRenderConfig;
+  markdownParseConfig: PublishMarkdownParseRuntimeConfig;
   prepareConfig: PublishPrepareRuntimeConfig;
 }
 
@@ -144,6 +148,9 @@ export function buildPublishRuntime(
       ...(mermaidBoardDiagramType === undefined ? {} : { diagramType: mermaidBoardDiagramType }),
     },
   };
+  const markdownParseConfig: PublishMarkdownParseRuntimeConfig = {
+    singleDollarTextMath: options.singleDollarTextMath ?? false,
+  };
 
   return {
     env,
@@ -164,6 +171,7 @@ export function buildPublishRuntime(
     downloadRemoteImages,
     ...(ytDlpPath ? { ytDlpPath } : {}),
     mermaidRenderConfig,
+    markdownParseConfig,
     prepareConfig: {
       enabled: downloadRemoteImages,
       timeoutMs: prepareTimeoutMs,
@@ -197,6 +205,9 @@ export function logPublishRuntimeSummary(
         )} diagram_type=${String(runtime.mermaidRenderConfig.board.diagramType ?? '(default)')}`
       : 'Mermaid: target=text-drawing',
   );
+  if (runtime.markdownParseConfig.singleDollarTextMath) {
+    console.error('Markdown parse: single_dollar_text_math=true');
+  }
   console.error(`Document URL base: ${runtime.documentBaseUrl}`);
   if (runtime.resourceBaseDir) {
     console.error(`Local asset base override: ${runtime.resourceBaseDir}`);

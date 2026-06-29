@@ -97,6 +97,18 @@ test('parsePublishMdArgs parses prepare options', () => {
   });
 });
 
+test('parsePublishMdArgs parses single-dollar math option aliases', () => {
+  const longOption = parsePublishMdArgs(['--input', './examples/a.md', '--single-dollar-text-math', '--dry-run'], {
+    LARK_FOLDER_TOKEN: 'fld_test_token',
+  });
+  assert.equal(longOption.singleDollarTextMath, true);
+
+  const shortOption = parsePublishMdArgs(['--input', './examples/a.md', '--single-dollar-math', '--dry-run'], {
+    LARK_FOLDER_TOKEN: 'fld_test_token',
+  });
+  assert.equal(shortOption.singleDollarTextMath, true);
+});
+
 test('parsePublishMdArgs parses --no-date-prefix', () => {
   const options = parsePublishMdArgs(['--input', './examples/a.md', '--no-date-prefix', '--dry-run'], {
     LARK_FOLDER_TOKEN: 'fld_test_token',
@@ -158,6 +170,7 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /--download-remote-images/);
   assert.match(usage, /--yt-dlp-path/);
   assert.match(usage, /--pipeline-cache-dir/);
+  assert.match(usage, /--single-dollar-text-math/);
   assert.match(usage, /--no-date-prefix/);
   assert.match(usage, /--mermaid-target/);
   assert.match(usage, /--mermaid-board-syntax-type/);

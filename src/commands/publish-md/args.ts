@@ -14,6 +14,7 @@ export interface PublishMdCliOptions {
   ytDlpPath?: string;
   ytDlpCookiesPath?: string;
   pipelineCacheDir?: string;
+  singleDollarTextMath?: boolean;
   mermaidTarget?: MermaidRenderTarget;
   mermaidBoardSyntaxType?: number;
   mermaidBoardStyleType?: number;
@@ -23,7 +24,7 @@ export interface PublishMdCliOptions {
 
 function usage(): string {
   return [
-    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--resource-base-dir <dir>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
+    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--resource-base-dir <dir>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--single-dollar-text-math] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
     '',
     'Options:',
     '  --input   Markdown file path, or directory path (publish all *.md recursively).',
@@ -40,6 +41,7 @@ function usage(): string {
     '  --yt-dlp-path               Optional yt-dlp executable path for standalone URL extraction.',
     '  --yt-dlp-cookies-path       Optional cookie file path passed to yt-dlp --cookies.',
     '  --pipeline-cache-dir        Pipeline cache root directory. Default: ./out/pipeline-cache',
+    '  --single-dollar-text-math   Opt in to parsing $...$ as inline math. Default: disabled to avoid currency false positives.',
     '  --mermaid-target            Mermaid render target: text-drawing (default) or board.',
     '  --mermaid-board-syntax-type Optional integer syntax_type for board createPlantuml (default: 2).',
     '  --mermaid-board-style-type  Optional integer style_type for board createPlantuml.',
@@ -89,6 +91,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
   let ytDlpPath = '';
   let ytDlpCookiesPath = '';
   let pipelineCacheDir = '';
+  let singleDollarTextMath: boolean | undefined;
   let mermaidTarget: MermaidRenderTarget | undefined;
   let mermaidBoardSyntaxType: number | undefined;
   let mermaidBoardStyleType: number | undefined;
@@ -207,6 +210,11 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
       continue;
     }
 
+    if (arg === '--single-dollar-text-math' || arg === '--single-dollar-math') {
+      singleDollarTextMath = true;
+      continue;
+    }
+
     if (arg === '--mermaid-target') {
       const value = argv[i + 1];
       if (!value) throw new Error('Missing value for --mermaid-target.');
@@ -284,6 +292,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
     ...(ytDlpPath.trim() ? { ytDlpPath: ytDlpPath.trim() } : {}),
     ...(ytDlpCookiesPath.trim() ? { ytDlpCookiesPath: ytDlpCookiesPath.trim() } : {}),
     ...(pipelineCacheDir.trim() ? { pipelineCacheDir: pipelineCacheDir.trim() } : {}),
+    ...(singleDollarTextMath === undefined ? {} : { singleDollarTextMath }),
     ...(mermaidTarget ? { mermaidTarget } : {}),
     ...(mermaidBoardSyntaxType === undefined ? {} : { mermaidBoardSyntaxType }),
     ...(mermaidBoardStyleType === undefined ? {} : { mermaidBoardStyleType }),

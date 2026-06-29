@@ -6,12 +6,16 @@ import remarkRehype from 'remark-rehype';
 import type { Root as HastRoot } from 'hast';
 import { normalizeMarkdownBeforeParse } from './normalize-markdown.js';
 
-export async function markdownToHast(markdown: string): Promise<HastRoot> {
+export interface MarkdownToHastOptions {
+  singleDollarTextMath?: boolean;
+}
+
+export async function markdownToHast(markdown: string, options: MarkdownToHastOptions = {}): Promise<HastRoot> {
   const content = normalizeMarkdownBeforeParse(markdown);
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
-    .use(remarkMath, { singleDollarTextMath: false })
+    .use(remarkMath, { singleDollarTextMath: options.singleDollarTextMath ?? false })
     .use(remarkRehype, { allowDangerousHtml: false });
 
   const mdast = processor.parse(content);

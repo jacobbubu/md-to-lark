@@ -2,11 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { convertLASTToBTT } from '../interop/index.js';
 import { clearDocumentContent, normalizeDocumentId } from '../lark/docx/ops.js';
-import {
-  renderBTTToDocument,
-  type RenderFailedNode,
-  type RenderMediaTokenMapping,
-} from '../lark/docx/render-btt.js';
+import { renderBTTToDocument, type RenderFailedNode, type RenderMediaTokenMapping } from '../lark/docx/render-btt.js';
 import { hastToLAST, markdownToHast, prepareMarkdownBeforePublish } from '../pipeline/index.js';
 import type { PublishMdCliOptions } from '../commands/publish-md/args.js';
 import type { PublishInputSet } from '../commands/publish-md/input-resolver.js';
@@ -143,7 +139,7 @@ export async function processSingleMarkdownFile(
     `[prepare ${index + 1}/${inputSet.markdownFiles.length}] rewritten=${prepareResult.rewrittenCount} downloaded=${prepareResult.downloadedCount} failed=${prepareResult.failedCount} log=${prepareResult.logFilePath}`,
   );
 
-  const hast = await markdownToHast(markdown);
+  const hast = await markdownToHast(markdown, runtime.markdownParseConfig);
   await writeHastStage(stagePaths, hast);
   const h1RuleResult = options.title ? {} : applySingleH1TitleRule(hast);
   const title = buildTitleForMarkdown(markdownPath, inputSet, options.title, h1RuleResult.derivedTitle, {
@@ -197,7 +193,9 @@ export async function processSingleMarkdownFile(
       `[dry-run ${index + 1}/${inputSet.markdownFiles.length}] btt blocks: ${Object.keys(btt.flatBlocks).length}`,
     );
     console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid patches: ${mermaidByBlockId.size}`);
-    console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid target: ${runtime.mermaidRenderConfig.target}`);
+    console.error(
+      `[dry-run ${index + 1}/${inputSet.markdownFiles.length}] mermaid target: ${runtime.mermaidRenderConfig.target}`,
+    );
     console.error(`[dry-run ${index + 1}/${inputSet.markdownFiles.length}] local assets: ${localAssetByBlockId.size}`);
     return {
       stagePaths,

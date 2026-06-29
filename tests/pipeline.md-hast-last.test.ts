@@ -107,6 +107,23 @@ function collectLASTTextRuns(
   return runs;
 }
 
+function collectLASTEquations(last: ReturnType<typeof hastToLAST>): string[] {
+  const equations: string[] = [];
+
+  for (const block of Object.values(last.blocks)) {
+    const inlines = (block as { payload?: { inlines?: unknown[] } }).payload?.inlines;
+    if (!Array.isArray(inlines)) continue;
+    for (const inline of inlines) {
+      const record = inline as { kind?: unknown; latex?: unknown };
+      if (record.kind === 'equation' && typeof record.latex === 'string') {
+        equations.push(record.latex);
+      }
+    }
+  }
+
+  return equations;
+}
+
 function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean; link: unknown }> {
   const runs: Array<{ text: string; bold: boolean; link: unknown }> = [];
   const seen = new WeakSet<object>();
@@ -394,6 +411,61 @@ test('markdownToHast keeps currency amounts as plain text when single-dollar mat
     .map((inline) => ('text' in inline && typeof inline.text === 'string' ? inline.text : ''))
     .join('');
   assert.equal(text, markdown);
+});
+
+test('markdownToHast keeps single-dollar inline math as text by default', async () => {
+  const markdown = 'Inline formula stays text by default: $x_t = y_t + 1$.';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'single-dollar-default' });
+
+  assert.deepEqual(collectLASTEquations(last), []);
+  assert.equal(
+    collectLASTTextRuns(last)
+      .map((run) => run.text)
+      .join(''),
+    markdown,
+  );
+});
+
+test('markdownToHast can opt in to single-dollar inline math while protecting code', async () => {
+  const markdown = [
+    'Inline formula: $x_t = y_t + 1$.',
+    '',
+    'Chinese text with formula: 第 $t$ 步的状态为 $s_t$。',
+    '',
+    'Code span must not parse: `$x_t$`.',
+    '',
+    '| 方法 | 复杂度 |',
+    '| --- | --- |',
+    '| 注意力 | $O(n^2)$ |',
+    '',
+    'Fenced code must not parse:',
+    '',
+    '```python',
+    'price = "$20.47"',
+    'formula = "$x_t$"',
+    '```',
+    '',
+  ].join('\n');
+  const hast = await markdownToHast(markdown, { singleDollarTextMath: true });
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'single-dollar-enabled' });
+
+  assert.deepEqual(collectLASTEquations(last), ['x_t = y_t + 1', 't', 's_t', 'O(n^2)']);
+
+  const inlineCodeRun = collectLASTTextRuns(last).find((run) => run.inlineCode);
+  assert.equal(inlineCodeRun?.text, '$x_t$');
+
+  const codeIds = last.indexes.byType.code ?? [];
+  assert.equal(codeIds.length, 1);
+  const codeBlock = codeIds[0] ? last.blocks[codeIds[0]] : undefined;
+  assert.ok(codeBlock && codeBlock.type === 'code');
+  if (!codeBlock || codeBlock.type !== 'code') return;
+
+  const codeText = codeBlock.payload.inlines
+    .map((inline) => ('text' in inline && typeof inline.text === 'string' ? inline.text : ''))
+    .join('');
+  assert.equal(codeText.includes('price = "$20.47"'), true);
+  assert.equal(codeText.includes('formula = "$x_t$"'), true);
 });
 
 test('normalizeMarkdownBeforeParse moves trailing chinese punctuation outside bold markers', () => {

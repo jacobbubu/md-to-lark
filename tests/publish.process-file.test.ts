@@ -77,6 +77,48 @@ test('processSingleMarkdownFile builds dry-run stage artifacts directly', async 
   assert.match(prepareLogText, /"generatedAt":/);
 });
 
+test('processSingleMarkdownFile applies single-dollar math parse config in dry-run stages', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'single.md');
+  await writeFile(file, '# Math Title\n\nInline formula: $x_t = y_t + 1$.\n', 'utf8');
+
+  const options = {
+    inputPath: file,
+    folderToken: 'fld_test',
+    dryRun: true,
+    pipelineCacheDir: path.join(dir, 'cache'),
+    singleDollarTextMath: true,
+  } as const;
+
+  const runtime = buildPublishRuntime(options, baseEnv, []);
+  const result = await withSilencedConsole(async () =>
+    processSingleMarkdownFile({
+      runtime,
+      inputSet: {
+        mode: 'single',
+        rootPath: dir,
+        markdownFiles: [file],
+      },
+      options,
+      markdownPath: file,
+      index: 0,
+    }),
+  );
+
+  const lastStage = JSON.parse(await readFile(path.join(result.stagePaths.lastDir, 'last.json'), 'utf8')) as {
+    blocks?: Record<string, { payload?: { inlines?: Array<{ kind?: string; latex?: string }> } }>;
+  };
+  const equations = Object.values(lastStage.blocks ?? {}).flatMap((block) =>
+    (block.payload?.inlines ?? []).filter((inline) => inline.kind === 'equation').map((inline) => inline.latex ?? ''),
+  );
+
+  assert.deepEqual(equations, ['x_t = y_t + 1']);
+});
+
 test('processSingleMarkdownFile applies multiple presets in order and records preset chain', async (t) => {
   const dir = await createTempDir();
   t.after(async () => {

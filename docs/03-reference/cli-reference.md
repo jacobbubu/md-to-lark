@@ -39,6 +39,7 @@ npm run publish:md -- --input <file.md|dir> \
   [--yt-dlp-path <path>] \
   [--yt-dlp-cookies-path <path>] \
   [--pipeline-cache-dir <dir>] \
+  [--single-dollar-text-math] \
   [--mermaid-target <text-drawing|board>] \
   [--mermaid-board-syntax-type <int>] \
   [--mermaid-board-style-type <int>] \
@@ -255,6 +256,32 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 
 1. `docs/02-guides/pipeline-cache-and-dry-run.md`
 
+## Markdown 解析相关
+
+### `--single-dollar-text-math`
+
+显式开启单美元行内公式解析，也就是把 `$...$` 解析成 inline equation。
+
+默认值：
+
+1. 关闭
+
+适用场景：
+
+1. arXiv 论文
+2. LaTeX 密集的技术文档
+3. 调用方已经确认正文里的美元金额不会被误判为公式
+
+注意：
+
+1. 默认关闭是为了避免 `$20.47`、`$1.6T` 这类金额被误解析成公式
+2. 反引号 inline code 和 fenced code block 内的 `$...$` 仍按代码处理
+3. GFM table cell 内的 `$...$` 会在开启后解析为 inline equation
+
+别名：
+
+1. `--single-dollar-math`
+
 ## Mermaid 相关
 
 ### `--mermaid-target <text-drawing|board>`
@@ -344,6 +371,12 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run
 
 ```bash
 npm run publish:md -- --input ./docs --title Weekly
+```
+
+论文 Markdown dry-run：
+
+```bash
+npm run publish:md -- --input ./paper.md --single-dollar-text-math --dry-run
 ```
 
 写入已有文档：

@@ -23,7 +23,7 @@
 可以把它理解成：
 
 ```ts
-const results = await publishMdToLark(options, env)
+const results = await publishMdToLark(options, env);
 ```
 
 其中：
@@ -63,11 +63,12 @@ const results = await publishMdToLark(options, env)
 11. `ytDlpPath`
 12. `ytDlpCookiesPath`
 13. `pipelineCacheDir`
-14. `mermaidTarget`
-15. `mermaidBoardSyntaxType`
-16. `mermaidBoardStyleType`
-17. `mermaidBoardDiagramType`
-18. `dryRun`
+14. `singleDollarTextMath`
+15. `mermaidTarget`
+16. `mermaidBoardSyntaxType`
+17. `mermaidBoardStyleType`
+18. `mermaidBoardDiagramType`
+19. `dryRun`
 
 这些字段和 CLI 参数大体对应。
 
@@ -114,6 +115,30 @@ console.log(results);
 当前仓库里现成的示例文件是：
 
 1. `examples/module-usage.ts`
+
+## 论文或 LaTeX 密集 Markdown
+
+默认情况下，程序化调用和 CLI 一样不会把 `$...$` 当作行内公式解析。
+
+如果调用方正在发布论文、arXiv 提取内容，或者其他明确使用单美元行内公式的 Markdown，可以显式传：
+
+```ts
+const results = await publishMdToLark(
+  {
+    inputPath: './paper.md',
+    folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    singleDollarTextMath: true,
+    dryRun: true,
+  },
+  process.env,
+);
+```
+
+这个选项只影响 Markdown parser：
+
+1. 开启后 `$x_t$` 会进入 inline equation
+2. 默认关闭可以避免 `$20.47`、`$1.6T` 这类金额被误判为公式
+3. inline code 和 fenced code block 里的 `$...$` 仍会按代码处理
 
 ## 一个真实发布例子
 

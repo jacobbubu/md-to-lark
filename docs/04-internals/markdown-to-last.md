@@ -42,7 +42,18 @@ Markdown -> HAST -> LAST
 
 1. 单美元 inline math 默认关闭
 2. 也就是正文里的 `$20.47`、`$23.00` 这类货币金额不会被当成数学公式
-3. 如果要写 inline math，需要使用非单美元写法，例如 `$$a^2 + b^2 = c^2$$`
+3. 如果要发布论文或 LaTeX 密集 Markdown，可以通过 `singleDollarTextMath` parser 选项显式开启 `$...$`
+4. CLI 对应参数是 `--single-dollar-text-math`
+
+开启后，`remark-math` 会把 `$x_t$` 解析成 `code.math-inline`。后续 `hastToLAST` 会把它映射成 `equation` inline。
+
+这个选项仍由调用方显式决定，原因是普通商业或金融文章里经常出现 `$20.47`、`$1.6T` 这样的金额表达，全局开启会有误判风险。
+
+代码保护仍由 Markdown parser 保证：
+
+1. inline code 里的 `` `$x_t$` `` 保持代码
+2. fenced code block 里的 `$...$` 保持代码内容
+3. GFM table cell 里的 `$...$` 会在开启后正常进入 inline equation
 
 ## frontmatter 为什么会先改写成代码块
 

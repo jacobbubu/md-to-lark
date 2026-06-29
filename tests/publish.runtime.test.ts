@@ -70,6 +70,7 @@ test('buildPublishRuntime derives env and option defaults into normalized runtim
   assert.equal(runtime.titleDatePrefix, true);
   assert.equal(runtime.pipelineCacheRootDir, path.resolve('./tmp-cache'));
   assert.equal(runtime.ytDlpPath, '/tmp/bin/yt-dlp');
+  assert.equal(runtime.markdownParseConfig.singleDollarTextMath, false);
   assert.equal(runtime.mermaidRenderConfig.target, 'board');
   assert.equal(runtime.mermaidRenderConfig.board.syntaxType, 9);
   assert.equal(runtime.mermaidRenderConfig.board.styleType, 7);
@@ -83,6 +84,19 @@ test('buildPublishRuntime derives env and option defaults into normalized runtim
   assert.equal(runtime.prepareConfig.ytDlpTimeoutMs, 1000);
   assert.equal(runtime.prepareConfig.ytDlpPath, '/tmp/bin/yt-dlp');
   assert.equal(runtime.documentUrlFor('doccn_demo'), 'https://feishu.cn/docx/doccn_demo');
+});
+
+test('buildPublishRuntime maps single-dollar math option into markdown parse config', () => {
+  const runtime = buildPublishRuntime(
+    {
+      ...baseOptions,
+      singleDollarTextMath: true,
+    },
+    baseEnv,
+    [],
+  );
+
+  assert.equal(runtime.markdownParseConfig.singleDollarTextMath, true);
 });
 
 test('buildPublishRuntime prefers explicit document base url, then env, then derived fallback', () => {

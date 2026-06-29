@@ -112,6 +112,7 @@ Presets, Mermaid, and stage artifacts:
 npm run publish:md -- --input ./test-md/comp/comp.md --preset medium --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --preset zh-format --preset ./my-preset.mjs --dry-run
+npm run publish:md -- --input ./paper.md --single-dollar-text-math --dry-run
 npm run publish:md -- --input ./tmp/generated/article.md --resource-base-dir ./source-assets --dry-run
 npm run publish:md -- --input ./test-md/mermaid.md --mermaid-target board --dry-run
 npm run publish:md -- --input ./test-md/comp/comp.md --pipeline-cache-dir ./out/debug-cache --dry-run
@@ -175,6 +176,7 @@ Guardrails:
 - Local attachment and image detection with real upload
 - Remote image download and standalone URL preparation
 - Mermaid `text-drawing` and `board` output paths
+- Opt-in single-dollar inline math parsing for LaTeX-heavy papers
 - Table width heuristics and numeric-column right alignment
 - Chinese Markdown formatting preset (`zh-format`)
 - Ordered preset composition from CLI and programmatic usage
