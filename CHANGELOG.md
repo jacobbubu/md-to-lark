@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/jacobbubu/md-to-lark/compare/v1.5.0...v1.5.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* preserve linked markdown images ([13bc9c4](https://github.com/jacobbubu/md-to-lark/commit/13bc9c4bc72c76bf4553f400081bb399e9dbd481))
+
 # [1.5.0](https://github.com/jacobbubu/md-to-lark/compare/v1.4.11...v1.5.0) (2026-06-29)
 
 ### Features
