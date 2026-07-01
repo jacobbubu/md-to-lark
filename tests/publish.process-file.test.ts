@@ -119,6 +119,79 @@ test('processSingleMarkdownFile applies single-dollar math parse config in dry-r
   assert.deepEqual(equations, ['x_t = y_t + 1']);
 });
 
+test('processSingleMarkdownFile keeps linked markdown images through dry-run BTT stages', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const assetsDir = path.join(dir, 'assets');
+  await mkdir(assetsDir, { recursive: true });
+  await writeFile(path.join(assetsDir, 'image-1.webp'), 'webp', 'utf8');
+  await writeFile(path.join(assetsDir, 'image-2.jpg'), 'jpg', 'utf8');
+  await writeFile(path.join(assetsDir, 'image-3.png'), 'png', 'utf8');
+
+  const file = path.join(dir, 'linked.md');
+  await writeFile(
+    file,
+    [
+      '# Linked Images',
+      '',
+      '[![](assets/image-1.webp)](https://substackcdn.com/image/fetch/$s_!Sudo!,f_auto,q_auto/foo.jpeg)_Caption after image_',
+      '',
+      '[![Alt text](assets/image-2.jpg)](https://example.com/original)',
+      '',
+      'Before [![Inline alt](assets/image-3.png)](https://example.com/full) after.',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+
+  const options = {
+    inputPath: file,
+    folderToken: 'fld_test',
+    dryRun: true,
+    pipelineCacheDir: path.join(dir, 'cache'),
+  } as const;
+
+  const runtime = buildPublishRuntime(options, baseEnv, []);
+  const result = await withSilencedConsole(async () =>
+    processSingleMarkdownFile({
+      runtime,
+      inputSet: {
+        mode: 'single',
+        rootPath: dir,
+        markdownFiles: [file],
+      },
+      options,
+      markdownPath: file,
+      index: 0,
+    }),
+  );
+
+  const lastStage = JSON.parse(await readFile(path.join(result.stagePaths.lastDir, 'last.json'), 'utf8')) as {
+    indexes?: { byType?: { image?: string[] } };
+    blocks?: Record<string, { selector?: { attrs?: { sourceUrl?: string } }; payload?: { inlines?: unknown[] } }>;
+  };
+  const imageIds = lastStage.indexes?.byType?.image ?? [];
+  assert.equal(imageIds.length, 3);
+  assert.deepEqual(
+    imageIds.map((imageId) => lastStage.blocks?.[imageId]?.selector?.attrs?.sourceUrl ?? null),
+    ['assets/image-1.webp', 'assets/image-2.jpg', 'assets/image-3.png'],
+  );
+
+  const bttStage = JSON.parse(await readFile(path.join(result.stagePaths.bttDir, 'btt.json'), 'utf8')) as {
+    flatBlocks?: Record<string, { block_type?: number }>;
+  };
+  const bttImageCount = Object.values(bttStage.flatBlocks ?? {}).filter((block) => block.block_type === 27).length;
+  assert.equal(bttImageCount, 3);
+
+  const bttMeta = JSON.parse(await readFile(path.join(result.stagePaths.bttDir, 'meta.json'), 'utf8')) as {
+    localAssetCount?: number;
+  };
+  assert.equal(bttMeta.localAssetCount, 3);
+});
+
 test('processSingleMarkdownFile applies multiple presets in order and records preset chain', async (t) => {
   const dir = await createTempDir();
   t.after(async () => {

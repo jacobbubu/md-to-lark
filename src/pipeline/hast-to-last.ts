@@ -198,7 +198,12 @@ function createDividerBlock(ctx: ConversionContext, parentId: LASTBlockId): LAST
   return blockId;
 }
 
-function createImageBlock(ctx: ConversionContext, parentId: LASTBlockId, sourceUrl: string | null): LASTBlockId {
+function createImageBlock(
+  ctx: ConversionContext,
+  parentId: LASTBlockId,
+  sourceUrl: string | null,
+  alt: string | null = null,
+): LASTBlockId {
   const blockId = nextBlockId(ctx);
   const parentBlock = ctx.blocks[parentId];
   const blockBase: Extract<LASTBlockNode, { type: 'image' }> = {
@@ -209,8 +214,15 @@ function createImageBlock(ctx: ConversionContext, parentId: LASTBlockId, sourceU
     payload: createDefaultImagePayload(parentBlock?.type),
   };
 
+  const selectorAttrs: Record<string, string> = {};
   if (sourceUrl) {
-    blockBase.selector = { attrs: { sourceUrl } };
+    selectorAttrs.sourceUrl = sourceUrl;
+  }
+  if (alt) {
+    selectorAttrs.alt = alt;
+  }
+  if (Object.keys(selectorAttrs).length > 0) {
+    blockBase.selector = { attrs: selectorAttrs };
   }
 
   addBlock(ctx, blockBase);
@@ -447,12 +459,34 @@ function getMeaningfulChildren(nodes: HastRootContent[]): HastRootContent[] {
   return nodes.filter((child) => !isWhitespaceTextNode(child));
 }
 
-function findStandaloneImageSrcInParagraph(paragraph: HastElement): string | null {
+interface ImageSource {
+  sourceUrl: string | null;
+  alt: string | null;
+}
+
+function extractImageSourceFromElement(element: HastElement): ImageSource | null {
+  if (element.tagName === 'img') {
+    return {
+      sourceUrl: getStringProp(element, 'src'),
+      alt: getStringProp(element, 'alt'),
+    };
+  }
+
+  if (element.tagName !== 'a') return null;
+
+  const meaningfulChildren = getMeaningfulChildren(getChildren(element));
+  if (meaningfulChildren.length !== 1) return null;
+  const only = meaningfulChildren[0];
+  if (!only || !isElement(only)) return null;
+  return extractImageSourceFromElement(only);
+}
+
+function findStandaloneImageInParagraph(paragraph: HastElement): ImageSource | null {
   const meaningfulChildren = getMeaningfulChildren(getChildren(paragraph));
   if (meaningfulChildren.length !== 1) return null;
   const only = meaningfulChildren[0];
-  if (!only || !isElement(only) || only.tagName !== 'img') return null;
-  return getStringProp(only, 'src');
+  if (!only || !isElement(only)) return null;
+  return extractImageSourceFromElement(only);
 }
 
 function parseHttpUrl(url: string): URL | undefined {
@@ -551,7 +585,7 @@ function findStandaloneIframePayloadInParagraph(
 
 function findStandaloneRichItemInTableCell(
   cell: HastElement,
-): { kind: 'image'; sourceUrl: string | null } | { kind: 'iframe'; url: string; iframeType: LASTIframeType } | null {
+): (ImageSource & { kind: 'image' }) | { kind: 'iframe'; url: string; iframeType: LASTIframeType } | null {
   let meaningfulChildren = getMeaningfulChildren(getChildren(cell));
   if (meaningfulChildren.length !== 1) return null;
   let only = meaningfulChildren[0];
@@ -562,10 +596,11 @@ function findStandaloneRichItemInTableCell(
   }
 
   if (!only || !isElement(only)) return null;
-  if (only.tagName === 'img') {
+  const imageSource = extractImageSourceFromElement(only);
+  if (imageSource) {
     return {
       kind: 'image',
-      sourceUrl: getStringProp(only, 'src'),
+      ...imageSource,
     };
   }
   if (only.tagName !== 'a') return null;
@@ -801,7 +836,7 @@ function convertTable(ctx: ConversionContext, table: HastElement, parentId: LAST
       const richItem = cell ? findStandaloneRichItemInTableCell(cell) : null;
 
       if (cellBlock?.type === 'table_cell' && richItem?.kind === 'image') {
-        const imageId = createImageBlock(ctx, cellId, richItem.sourceUrl);
+        const imageId = createImageBlock(ctx, cellId, richItem.sourceUrl, richItem.alt);
         cellBlock.children = [imageId];
         cells.push(cellId);
         continue;
@@ -884,6 +919,50 @@ function convertUnknownElement(ctx: ConversionContext, element: HastElement, par
   ];
 }
 
+function hasNonWhitespaceInline(inlines: LASTInlineNode[]): boolean {
+  return inlines.some((inline) => toSearchText(inline).text.trim().length > 0);
+}
+
+function convertParagraph(ctx: ConversionContext, paragraph: HastElement, parentId: LASTBlockId): LASTBlockId[] {
+  const standaloneImage = findStandaloneImageInParagraph(paragraph);
+  if (standaloneImage?.sourceUrl) {
+    return [createImageBlock(ctx, parentId, standaloneImage.sourceUrl, standaloneImage.alt)];
+  }
+
+  const standaloneIframe = findStandaloneIframePayloadInParagraph(paragraph);
+  if (standaloneIframe) {
+    return [createIframeBlock(ctx, parentId, standaloneIframe.url, standaloneIframe.iframeType)];
+  }
+
+  const ids: LASTBlockId[] = [];
+  let pendingInlineNodes: HastRootContent[] = [];
+  const flushText = (): void => {
+    if (pendingInlineNodes.length === 0) return;
+    const inlines = parseInlineNodes(ctx, pendingInlineNodes);
+    pendingInlineNodes = [];
+    if (!hasNonWhitespaceInline(inlines)) return;
+    ids.push(createTextualBlock(ctx, 'text', parentId, inlines));
+  };
+
+  for (const child of getChildren(paragraph)) {
+    const image = isElement(child) ? extractImageSourceFromElement(child) : null;
+    if (image?.sourceUrl) {
+      flushText();
+      ids.push(createImageBlock(ctx, parentId, image.sourceUrl, image.alt));
+      continue;
+    }
+    pendingInlineNodes.push(child);
+  }
+
+  flushText();
+
+  if (ids.length > 0) {
+    return ids;
+  }
+
+  return [createTextualBlock(ctx, 'text', parentId, parseInlineNodes(ctx, getChildren(paragraph)))];
+}
+
 function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: LASTBlockId): LASTBlockId[] {
   if (isWhitespaceTextNode(node)) {
     return [];
@@ -907,17 +986,8 @@ function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: L
   }
 
   switch (node.tagName) {
-    case 'p': {
-      const standaloneImageSrc = findStandaloneImageSrcInParagraph(node);
-      if (standaloneImageSrc) {
-        return [createImageBlock(ctx, parentId, standaloneImageSrc)];
-      }
-      const standaloneIframe = findStandaloneIframePayloadInParagraph(node);
-      if (standaloneIframe) {
-        return [createIframeBlock(ctx, parentId, standaloneIframe.url, standaloneIframe.iframeType)];
-      }
-      return [createTextualBlock(ctx, 'text', parentId, parseInlineNodes(ctx, getChildren(node)))];
-    }
+    case 'p':
+      return convertParagraph(ctx, node, parentId);
     case 'h1':
     case 'h2':
     case 'h3':
@@ -943,7 +1013,7 @@ function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: L
     case 'table':
       return convertTable(ctx, node, parentId);
     case 'img':
-      return [createImageBlock(ctx, parentId, getStringProp(node, 'src'))];
+      return [createImageBlock(ctx, parentId, getStringProp(node, 'src'), getStringProp(node, 'alt'))];
     case 'br':
       return [
         createTextualBlock(ctx, 'text', parentId, [

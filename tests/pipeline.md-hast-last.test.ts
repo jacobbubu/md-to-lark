@@ -11,6 +11,7 @@ import { convertLASTToBTT } from '../src/interop/index.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const richFixturePath = path.join(currentDir, 'fixtures', 'md', 'rich-gfm.md');
+const linkedImageFixturePath = path.join(currentDir, 'fixtures', 'md', 'linked-image.md');
 const unitreeFixturePath = path.join(currentDir, 'fixtures', 'md', 'unitree-article-verification.md');
 const TEST_CJK_BOLD_TRAILING_PUNCTUATION = new Set([
   '，',
@@ -921,4 +922,33 @@ test('hastToLAST gives standalone paragraph images a non-zero default width', as
   if (!image || image.type !== 'image') return;
   assert.equal(image.payload.width, DEFAULT_IMAGE_WIDTH);
   assert.equal(image.payload.height, undefined);
+});
+
+test('hastToLAST converts linked markdown images to image blocks and preserves surrounding text', async () => {
+  const markdown = await readFile(linkedImageFixturePath, 'utf8');
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'linked-image' });
+
+  const imageIds = last.indexes.byType.image ?? [];
+  assert.equal(imageIds.length, 3);
+
+  const images = imageIds.map((imageId) => last.blocks[imageId]).filter((block) => block?.type === 'image');
+  assert.equal(images.length, 3);
+  assert.deepEqual(
+    images.map((image) => (image?.type === 'image' ? image.selector?.attrs?.sourceUrl : null)),
+    ['assets/image-1.webp', 'assets/image-2.jpg', 'assets/image-3.png'],
+  );
+  assert.deepEqual(
+    images.map((image) => (image?.type === 'image' ? (image.selector?.attrs?.alt ?? null) : null)),
+    [null, 'Alt text', 'Inline alt'],
+  );
+
+  const text = collectLASTTextRuns(last)
+    .map((run) => run.text)
+    .join('');
+  assert.equal(text.includes('Caption after image'), true);
+  assert.equal(text.includes('Before '), true);
+  assert.equal(text.includes(' after.'), true);
+  assert.equal(text.includes('substackcdn.com'), false);
+  assert.equal(text.includes('https://example.com/original'), false);
 });
