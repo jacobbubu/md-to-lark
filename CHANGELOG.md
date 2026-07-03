@@ -1,9 +1,8 @@
 # [1.6.0](https://github.com/jacobbubu/md-to-lark/compare/v1.5.1...v1.6.0) (2026-07-03)
 
-
 ### Features
 
-* support image display size resolver ([025a5c3](https://github.com/jacobbubu/md-to-lark/commit/025a5c39cfb12387068532792c910f6915983733))
+- support image display size resolver ([025a5c3](https://github.com/jacobbubu/md-to-lark/commit/025a5c39cfb12387068532792c910f6915983733))
 
 ## [1.5.1](https://github.com/jacobbubu/md-to-lark/compare/v1.5.0...v1.5.1) (2026-07-01)
 
