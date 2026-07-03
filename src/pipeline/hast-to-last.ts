@@ -29,11 +29,35 @@ interface ConversionContext {
   blocks: Record<LASTBlockId, LASTBlockNode>;
   blockCounter: number;
   inlineCounter: number;
+  imageSizeContext: ImageSizeResolverBaseContext;
+  warnedImageSizeKeys: Set<string>;
+  imageSizeResolver?: ImageSizeResolver;
 }
+
+export interface ImageDisplaySize {
+  widthRatio?: number;
+  widthPx?: number;
+}
+
+export interface ImageSizeResolverContext {
+  inputPath?: string;
+  resourceBaseDir?: string;
+  alt?: string;
+  title?: string;
+}
+
+export interface ImageSizeResolverBaseContext {
+  inputPath?: string;
+  resourceBaseDir?: string;
+}
+
+export type ImageSizeResolver = (imageSrc: string, context: ImageSizeResolverContext) => ImageDisplaySize | undefined;
 
 export interface HastToLASTOptions {
   documentId?: string;
   mode?: 'document' | 'fragment';
+  imageSizeResolver?: ImageSizeResolver;
+  imageSizeContext?: ImageSizeResolverBaseContext;
 }
 
 const BLOCK_CONTAINER_TAGS: ReadonlySet<string> = new Set([
@@ -48,11 +72,21 @@ const BLOCK_CONTAINER_TAGS: ReadonlySet<string> = new Set([
 
 const DEFAULT_ALIGN: LASTAlign = 'left';
 
-function createContext(): ConversionContext {
+interface ImageSource {
+  sourceUrl: string | null;
+  alt: string | null;
+  title: string | null;
+  linkHref: string | null;
+}
+
+function createContext(options: HastToLASTOptions = {}): ConversionContext {
   return {
     blocks: {},
     blockCounter: 1,
     inlineCounter: 1,
+    imageSizeContext: options.imageSizeContext ?? {},
+    warnedImageSizeKeys: new Set(),
+    ...(options.imageSizeResolver ? { imageSizeResolver: options.imageSizeResolver } : {}),
   };
 }
 
@@ -198,14 +232,99 @@ function createDividerBlock(ctx: ConversionContext, parentId: LASTBlockId): LAST
   return blockId;
 }
 
+function warnInvalidImageDisplaySize(ctx: ConversionContext, key: string, message: string): void {
+  if (ctx.warnedImageSizeKeys.has(key)) return;
+  ctx.warnedImageSizeKeys.add(key);
+  console.warn(`[md-to-lark] ${message}`);
+}
+
+function buildImageSizeResolverContext(ctx: ConversionContext, image: ImageSource): ImageSizeResolverContext {
+  const context: ImageSizeResolverContext = {};
+  if (ctx.imageSizeContext.inputPath) {
+    context.inputPath = ctx.imageSizeContext.inputPath;
+  }
+  if (ctx.imageSizeContext.resourceBaseDir) {
+    context.resourceBaseDir = ctx.imageSizeContext.resourceBaseDir;
+  }
+  if (image.alt) {
+    context.alt = image.alt;
+  }
+  if (image.title) {
+    context.title = image.title;
+  }
+  return context;
+}
+
+function toPositiveRoundedWidth(value: number): number | undefined {
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return Math.max(1, Math.round(value));
+}
+
+function applyImageDisplaySize(
+  ctx: ConversionContext,
+  image: ImageSource,
+  block: Extract<LASTBlockNode, { type: 'image' }>,
+): void {
+  if (!ctx.imageSizeResolver || !image.sourceUrl) {
+    return;
+  }
+
+  const size = ctx.imageSizeResolver(image.sourceUrl, buildImageSizeResolverContext(ctx, image));
+  if (!size) {
+    return;
+  }
+
+  const hasWidthRatio = typeof size.widthRatio === 'number';
+  if (hasWidthRatio) {
+    const ratio = size.widthRatio as number;
+    if (Number.isFinite(ratio) && ratio > 0 && ratio <= 1) {
+      const baseWidth =
+        block.payload.width ??
+        createDefaultImagePayload(block.parentId ? ctx.blocks[block.parentId]?.type : undefined).width ??
+        0;
+      const width = toPositiveRoundedWidth(baseWidth * ratio);
+      if (width !== undefined) {
+        block.payload.width = width;
+      }
+      return;
+    }
+    warnInvalidImageDisplaySize(
+      ctx,
+      `widthRatio:${image.sourceUrl}:${String(size.widthRatio)}`,
+      `Ignoring invalid image widthRatio for ${image.sourceUrl}: ${String(size.widthRatio)}. Expected 0 < widthRatio <= 1.`,
+    );
+  }
+
+  if (typeof size.widthPx === 'number') {
+    const width = toPositiveRoundedWidth(size.widthPx);
+    if (width !== undefined) {
+      block.payload.width = width;
+      return;
+    }
+    warnInvalidImageDisplaySize(
+      ctx,
+      `widthPx:${image.sourceUrl}:${String(size.widthPx)}`,
+      `Ignoring invalid image widthPx for ${image.sourceUrl}: ${String(size.widthPx)}. Expected widthPx > 0.`,
+    );
+  }
+}
+
 function createImageBlock(
   ctx: ConversionContext,
   parentId: LASTBlockId,
   sourceUrl: string | null,
   alt: string | null = null,
+  title: string | null = null,
+  linkHref: string | null = null,
 ): LASTBlockId {
   const blockId = nextBlockId(ctx);
   const parentBlock = ctx.blocks[parentId];
+  const image: ImageSource = {
+    sourceUrl,
+    alt,
+    title,
+    linkHref,
+  };
   const blockBase: Extract<LASTBlockNode, { type: 'image' }> = {
     id: blockId,
     type: 'image',
@@ -221,10 +340,17 @@ function createImageBlock(
   if (alt) {
     selectorAttrs.alt = alt;
   }
+  if (title) {
+    selectorAttrs.title = title;
+  }
+  if (linkHref) {
+    selectorAttrs.linkHref = linkHref;
+  }
   if (Object.keys(selectorAttrs).length > 0) {
     blockBase.selector = { attrs: selectorAttrs };
   }
 
+  applyImageDisplaySize(ctx, image, blockBase);
   addBlock(ctx, blockBase);
   return blockId;
 }
@@ -459,26 +585,25 @@ function getMeaningfulChildren(nodes: HastRootContent[]): HastRootContent[] {
   return nodes.filter((child) => !isWhitespaceTextNode(child));
 }
 
-interface ImageSource {
-  sourceUrl: string | null;
-  alt: string | null;
-}
-
 function extractImageSourceFromElement(element: HastElement): ImageSource | null {
   if (element.tagName === 'img') {
     return {
       sourceUrl: getStringProp(element, 'src'),
       alt: getStringProp(element, 'alt'),
+      title: getStringProp(element, 'title'),
+      linkHref: null,
     };
   }
 
   if (element.tagName !== 'a') return null;
+  const href = getStringProp(element, 'href');
 
   const meaningfulChildren = getMeaningfulChildren(getChildren(element));
   if (meaningfulChildren.length !== 1) return null;
   const only = meaningfulChildren[0];
   if (!only || !isElement(only)) return null;
-  return extractImageSourceFromElement(only);
+  const imageSource = extractImageSourceFromElement(only);
+  return imageSource ? { ...imageSource, linkHref: href } : null;
 }
 
 function findStandaloneImageInParagraph(paragraph: HastElement): ImageSource | null {
@@ -836,7 +961,14 @@ function convertTable(ctx: ConversionContext, table: HastElement, parentId: LAST
       const richItem = cell ? findStandaloneRichItemInTableCell(cell) : null;
 
       if (cellBlock?.type === 'table_cell' && richItem?.kind === 'image') {
-        const imageId = createImageBlock(ctx, cellId, richItem.sourceUrl, richItem.alt);
+        const imageId = createImageBlock(
+          ctx,
+          cellId,
+          richItem.sourceUrl,
+          richItem.alt,
+          richItem.title,
+          richItem.linkHref,
+        );
         cellBlock.children = [imageId];
         cells.push(cellId);
         continue;
@@ -926,7 +1058,16 @@ function hasNonWhitespaceInline(inlines: LASTInlineNode[]): boolean {
 function convertParagraph(ctx: ConversionContext, paragraph: HastElement, parentId: LASTBlockId): LASTBlockId[] {
   const standaloneImage = findStandaloneImageInParagraph(paragraph);
   if (standaloneImage?.sourceUrl) {
-    return [createImageBlock(ctx, parentId, standaloneImage.sourceUrl, standaloneImage.alt)];
+    return [
+      createImageBlock(
+        ctx,
+        parentId,
+        standaloneImage.sourceUrl,
+        standaloneImage.alt,
+        standaloneImage.title,
+        standaloneImage.linkHref,
+      ),
+    ];
   }
 
   const standaloneIframe = findStandaloneIframePayloadInParagraph(paragraph);
@@ -948,7 +1089,7 @@ function convertParagraph(ctx: ConversionContext, paragraph: HastElement, parent
     const image = isElement(child) ? extractImageSourceFromElement(child) : null;
     if (image?.sourceUrl) {
       flushText();
-      ids.push(createImageBlock(ctx, parentId, image.sourceUrl, image.alt));
+      ids.push(createImageBlock(ctx, parentId, image.sourceUrl, image.alt, image.title, image.linkHref));
       continue;
     }
     pendingInlineNodes.push(child);
@@ -1013,7 +1154,15 @@ function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: L
     case 'table':
       return convertTable(ctx, node, parentId);
     case 'img':
-      return [createImageBlock(ctx, parentId, getStringProp(node, 'src'), getStringProp(node, 'alt'))];
+      return [
+        createImageBlock(
+          ctx,
+          parentId,
+          getStringProp(node, 'src'),
+          getStringProp(node, 'alt'),
+          getStringProp(node, 'title'),
+        ),
+      ];
     case 'br':
       return [
         createTextualBlock(ctx, 'text', parentId, [
@@ -1145,7 +1294,7 @@ function deepCloneBlock<T>(value: T): T {
 }
 
 export function hastToLAST(hast: HastRoot, options?: HastToLASTOptions): LASTModel {
-  const ctx = createContext();
+  const ctx = createContext(options);
   const mode = options?.mode ?? 'fragment';
 
   const rootId = createTextualBlock(ctx, 'page', null, []);

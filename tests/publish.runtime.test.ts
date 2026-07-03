@@ -99,6 +99,20 @@ test('buildPublishRuntime maps single-dollar math option into markdown parse con
   assert.equal(runtime.markdownParseConfig.singleDollarTextMath, true);
 });
 
+test('buildPublishRuntime preserves image size resolver for publish pipeline', () => {
+  const imageSizeResolver = () => ({ widthRatio: 0.5 });
+  const runtime = buildPublishRuntime(
+    {
+      ...baseOptions,
+      imageSizeResolver,
+    },
+    baseEnv,
+    [],
+  );
+
+  assert.equal(runtime.imageSizeResolver, imageSizeResolver);
+});
+
 test('buildPublishRuntime prefers explicit document base url, then env, then derived fallback', () => {
   const fromOption = buildPublishRuntime(
     {

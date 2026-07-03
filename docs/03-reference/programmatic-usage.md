@@ -64,11 +64,12 @@ const results = await publishMdToLark(options, env);
 12. `ytDlpCookiesPath`
 13. `pipelineCacheDir`
 14. `singleDollarTextMath`
-15. `mermaidTarget`
-16. `mermaidBoardSyntaxType`
-17. `mermaidBoardStyleType`
-18. `mermaidBoardDiagramType`
-19. `dryRun`
+15. `imageSizeResolver`
+16. `mermaidTarget`
+17. `mermaidBoardSyntaxType`
+18. `mermaidBoardStyleType`
+19. `mermaidBoardDiagramType`
+20. `dryRun`
 
 这些字段和 CLI 参数大体对应。
 
@@ -139,6 +140,47 @@ const results = await publishMdToLark(
 1. 开启后 `$x_t$` 会进入 inline equation
 2. 默认关闭可以避免 `$20.47`、`$1.6T` 这类金额被误判为公式
 3. inline code 和 fenced code block 里的 `$...$` 仍会按代码处理
+
+## 图片显示宽度
+
+默认情况下，图片块仍使用当前默认显示宽度。
+
+如果调用方在抓取阶段已经保存了图片相对正文容器的展示比例，可以通过 `imageSizeResolver` 按 Markdown 原始 `src` 提供尺寸信息：
+
+```ts
+const manifest = {
+  images: {
+    'assets/full.webp': { display_ratio: 1 },
+    'assets/half.webp': { display_ratio: 0.5 },
+    'assets/small.webp': { display_ratio: 0.3 },
+  },
+};
+
+const results = await publishMdToLark(
+  {
+    inputPath: './article.md',
+    folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    imageSizeResolver(src, context) {
+      return {
+        widthRatio: manifest.images[src]?.display_ratio,
+      };
+    },
+    dryRun: true,
+  },
+  process.env,
+);
+```
+
+规则：
+
+1. `src` 是 Markdown 原始图片路径，例如 `assets/image-1.webp`
+2. 普通图片和 linked image `[![](src)](href)` 都会调用 resolver
+3. `widthRatio` 要满足 `0 < widthRatio <= 1`
+4. `widthRatio` 非法时会被忽略并打印 warning
+5. 如果没有返回尺寸信息，图片保持旧行为
+6. `context` 会提供 `inputPath`、`resourceBaseDir`、`alt`、`title`
+
+当前实现把 `widthRatio` 映射到飞书 image block 的 `width` 字段，也就是默认正文宽度乘以该比例；`widthPx` 也可作为低优先级的绝对宽度备用值。
 
 ## 一个真实发布例子
 

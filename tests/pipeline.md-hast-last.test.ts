@@ -952,3 +952,96 @@ test('hastToLAST converts linked markdown images to image blocks and preserves s
   assert.equal(text.includes('substackcdn.com'), false);
   assert.equal(text.includes('https://example.com/original'), false);
 });
+
+test('hastToLAST applies imageSizeResolver widths to normal and linked images', async () => {
+  const markdown = [
+    '# Test',
+    '',
+    'Full image:',
+    '',
+    '![](assets/full.webp)',
+    '',
+    'Half image:',
+    '',
+    '![](assets/half.webp)',
+    '',
+    'Linked small image:',
+    '',
+    '[![](assets/small.webp)](https://example.com)',
+    '',
+  ].join('\n');
+  const calls: Array<{ src: string; inputPath?: string; resourceBaseDir?: string }> = [];
+  const sizes: Record<string, { widthRatio: number }> = {
+    'assets/full.webp': { widthRatio: 1 },
+    'assets/half.webp': { widthRatio: 0.5 },
+    'assets/small.webp': { widthRatio: 0.3 },
+  };
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, {
+    mode: 'fragment',
+    documentId: 'image-size-resolver',
+    imageSizeContext: {
+      inputPath: '/tmp/article.md',
+      resourceBaseDir: '/tmp/resources',
+    },
+    imageSizeResolver: (src, context) => {
+      calls.push({
+        src,
+        inputPath: context.inputPath,
+        resourceBaseDir: context.resourceBaseDir,
+      });
+      return sizes[src];
+    },
+  });
+
+  const imageIds = last.indexes.byType.image ?? [];
+  assert.equal(imageIds.length, 3);
+  const images = imageIds.map((imageId) => last.blocks[imageId]);
+  assert.deepEqual(
+    images.map((image) => (image?.type === 'image' ? image.selector?.attrs?.sourceUrl : null)),
+    ['assets/full.webp', 'assets/half.webp', 'assets/small.webp'],
+  );
+  assert.deepEqual(
+    images.map((image) => (image?.type === 'image' ? image.payload.width : null)),
+    [DEFAULT_IMAGE_WIDTH, Math.round(DEFAULT_IMAGE_WIDTH * 0.5), Math.round(DEFAULT_IMAGE_WIDTH * 0.3)],
+  );
+  assert.deepEqual(
+    calls.map((call) => call.src),
+    ['assets/full.webp', 'assets/half.webp', 'assets/small.webp'],
+  );
+  assert.equal(
+    calls.every((call) => call.inputPath === '/tmp/article.md'),
+    true,
+  );
+  assert.equal(
+    calls.every((call) => call.resourceBaseDir === '/tmp/resources'),
+    true,
+  );
+});
+
+test('hastToLAST ignores invalid image width ratios with a warning', async () => {
+  const markdown = '![](assets/invalid.webp)';
+  const hast = await markdownToHast(markdown);
+  const warnings: string[] = [];
+  const originalWarn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map((arg) => String(arg)).join(' '));
+  };
+  try {
+    const last = hastToLAST(hast, {
+      mode: 'fragment',
+      documentId: 'image-size-invalid',
+      imageSizeResolver: () => ({ widthRatio: 1.2 }),
+    });
+    const imageId = last.indexes.byType.image?.[0];
+    const image = imageId ? last.blocks[imageId] : undefined;
+    assert.ok(image && image.type === 'image');
+    if (!image || image.type !== 'image') return;
+    assert.equal(image.payload.width, DEFAULT_IMAGE_WIDTH);
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0] ?? '', /Ignoring invalid image widthRatio/);
+});

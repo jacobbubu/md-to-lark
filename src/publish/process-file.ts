@@ -149,6 +149,15 @@ export async function processSingleMarkdownFile(
   const last = hastToLAST(hast, {
     documentId: documentKey,
     mode: 'fragment',
+    ...(runtime.imageSizeResolver
+      ? {
+          imageSizeResolver: runtime.imageSizeResolver,
+          imageSizeContext: {
+            inputPath: markdownPath,
+            resourceBaseDir,
+          },
+        }
+      : {}),
   });
   await writeLastStage(stagePaths, last);
 

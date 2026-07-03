@@ -1,4 +1,5 @@
 import type { MermaidRenderTarget } from './mermaid-render.js';
+import type { ImageSizeResolver } from '../../pipeline/index.js';
 
 export interface PublishMdCliOptions {
   inputPath: string;
@@ -15,6 +16,7 @@ export interface PublishMdCliOptions {
   ytDlpCookiesPath?: string;
   pipelineCacheDir?: string;
   singleDollarTextMath?: boolean;
+  imageSizeResolver?: ImageSizeResolver;
   mermaidTarget?: MermaidRenderTarget;
   mermaidBoardSyntaxType?: number;
   mermaidBoardStyleType?: number;

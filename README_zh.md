@@ -174,6 +174,7 @@ npm run test:e2e:watch
 - 单文件和目录递归发布
 - 标题推导、标题前缀和单 H1 标题提升
 - 本地附件/图片识别与真实上传
+- 通过 `imageSizeResolver` 在程序化调用中控制图片显示宽度
 - 远程图片下载与独立 URL 预处理
 - Mermaid `text-drawing` 和 `board` 两条输出路径
 - 面向论文/LaTeX 密集内容的单美元行内公式显式开启选项

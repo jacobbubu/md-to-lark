@@ -152,6 +152,14 @@ test('processSingleMarkdownFile keeps linked markdown images through dry-run BTT
     folderToken: 'fld_test',
     dryRun: true,
     pipelineCacheDir: path.join(dir, 'cache'),
+    imageSizeResolver: (src: string) =>
+      (
+        ({
+          'assets/image-1.webp': { widthRatio: 1 },
+          'assets/image-2.jpg': { widthRatio: 0.5 },
+          'assets/image-3.png': { widthRatio: 0.3 },
+        }) as Record<string, { widthRatio: number } | undefined>
+      )[src],
   } as const;
 
   const runtime = buildPublishRuntime(options, baseEnv, []);
@@ -171,7 +179,10 @@ test('processSingleMarkdownFile keeps linked markdown images through dry-run BTT
 
   const lastStage = JSON.parse(await readFile(path.join(result.stagePaths.lastDir, 'last.json'), 'utf8')) as {
     indexes?: { byType?: { image?: string[] } };
-    blocks?: Record<string, { selector?: { attrs?: { sourceUrl?: string } }; payload?: { inlines?: unknown[] } }>;
+    blocks?: Record<
+      string,
+      { selector?: { attrs?: { sourceUrl?: string } }; payload?: { width?: number; inlines?: unknown[] } }
+    >;
   };
   const imageIds = lastStage.indexes?.byType?.image ?? [];
   assert.equal(imageIds.length, 3);
@@ -179,12 +190,20 @@ test('processSingleMarkdownFile keeps linked markdown images through dry-run BTT
     imageIds.map((imageId) => lastStage.blocks?.[imageId]?.selector?.attrs?.sourceUrl ?? null),
     ['assets/image-1.webp', 'assets/image-2.jpg', 'assets/image-3.png'],
   );
+  assert.deepEqual(
+    imageIds.map((imageId) => lastStage.blocks?.[imageId]?.payload?.width ?? null),
+    [1000, 500, 300],
+  );
 
   const bttStage = JSON.parse(await readFile(path.join(result.stagePaths.bttDir, 'btt.json'), 'utf8')) as {
-    flatBlocks?: Record<string, { block_type?: number }>;
+    flatBlocks?: Record<string, { block_type?: number; image?: { width?: number } }>;
   };
   const bttImageCount = Object.values(bttStage.flatBlocks ?? {}).filter((block) => block.block_type === 27).length;
   assert.equal(bttImageCount, 3);
+  assert.deepEqual(
+    imageIds.map((imageId) => bttStage.flatBlocks?.[imageId]?.image?.width ?? null),
+    [1000, 500, 300],
+  );
 
   const bttMeta = JSON.parse(await readFile(path.join(result.stagePaths.bttDir, 'meta.json'), 'utf8')) as {
     localAssetCount?: number;

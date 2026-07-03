@@ -171,6 +171,19 @@ Markdown -> HAST -> LAST
 2. `table_cell`
 3. cell 下的文本或富内容块
 
+### 图片
+
+普通 Markdown 图片会映射成：
+
+1. `image` block
+
+linked image 也会保留为图片块：
+
+1. `[![](assets/a.webp)](https://example.com)` 使用内层 `assets/a.webp` 作为图片资源
+2. 外层链接会保存在 selector 元数据里，但当前飞书 image block 渲染路径不把它变成可点击图片
+
+程序化调用可以传 `imageSizeResolver`，按 Markdown 原始 `src` 返回 `widthRatio` 或 `widthPx`。这一层会把尺寸信息写进 LAST image payload 的 `width` 字段，后续 BTT 和飞书渲染会继续透传。
+
 ### 可嵌入链接
 
 某些“单独成段、且命中支持列表”的链接，会被直接提升成：

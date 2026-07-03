@@ -14,6 +14,7 @@ import {
 } from '../lark/index.js';
 import type { LarkRequestOptions } from '../lark/docx/ops.js';
 import type { MermaidRenderConfig } from '../lark/docx/render-types.js';
+import type { ImageSizeResolver } from '../pipeline/hast-to-last.js';
 import type { MarkdownToHastOptions } from '../pipeline/markdown/md-to-hast.js';
 import type { PrepareMarkdownOptions } from '../pipeline/markdown/prepare-markdown.js';
 import { RateLimiter } from '../shared/rate-limiter.js';
@@ -86,6 +87,7 @@ export interface PublishRuntime {
   ytDlpPath?: string;
   mermaidRenderConfig: MermaidRenderConfig;
   markdownParseConfig: PublishMarkdownParseRuntimeConfig;
+  imageSizeResolver?: ImageSizeResolver;
   prepareConfig: PublishPrepareRuntimeConfig;
 }
 
@@ -172,6 +174,7 @@ export function buildPublishRuntime(
     ...(ytDlpPath ? { ytDlpPath } : {}),
     mermaidRenderConfig,
     markdownParseConfig,
+    ...(options.imageSizeResolver ? { imageSizeResolver: options.imageSizeResolver } : {}),
     prepareConfig: {
       enabled: downloadRemoteImages,
       timeoutMs: prepareTimeoutMs,
@@ -207,6 +210,9 @@ export function logPublishRuntimeSummary(
   );
   if (runtime.markdownParseConfig.singleDollarTextMath) {
     console.error('Markdown parse: single_dollar_text_math=true');
+  }
+  if (runtime.imageSizeResolver) {
+    console.error('Image display size resolver: enabled');
   }
   console.error(`Document URL base: ${runtime.documentBaseUrl}`);
   if (runtime.resourceBaseDir) {

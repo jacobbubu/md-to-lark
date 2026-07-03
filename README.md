@@ -174,6 +174,7 @@ Guardrails:
 - Single-file and recursive directory publish
 - Title derivation, title prefix, and single-H1 promotion
 - Local attachment and image detection with real upload
+- Programmatic image display width control through `imageSizeResolver`
 - Remote image download and standalone URL preparation
 - Mermaid `text-drawing` and `board` output paths
 - Opt-in single-dollar inline math parsing for LaTeX-heavy papers
