@@ -33,6 +33,12 @@ npm run publish:md -- --input <file.md|dir> \
   [--preset <preset_name_or_module_path>]... \
   [--document-base-url <base_url>] \
   [--resource-base-dir <dir>] \
+  [--renderer lark] \
+  [--renderer-contract <path>] \
+  [--renderer-default-contract <path>] \
+  [--strict] \
+  [--render-report <path>] \
+  [--image-size-manifest <path>] \
   [--folder <folder_token>] \
   [--doc <document_id>] \
   [--download-remote-images|--no-download-remote-images] \
@@ -47,6 +53,19 @@ npm run publish:md -- --input <file.md|dir> \
   [--dry-run] \
   [--help|-h]
 ```
+
+不需要发布凭据的协议检查命令：
+
+```bash
+publish-md-to-lark --print-capabilities
+publish-md-to-lark --validate-contract ./index-zh.lark.yml
+```
+
+## Renderer contract
+
+`--renderer-contract` 显式选择 `article-render/v1` 合同，优先级高于 frontmatter 和同目录自动发现。`--strict` 要求合同存在，并把未知 directive、重复 ID、footnote 不匹配、缺图、非法表格、KaTeX 错误和不允许的飞书父子关系作为发布前错误。
+
+`--render-report` 把 source semantic、LAST、BTT、图片尺寸匹配和远端 block count 写入 JSON。协议模式的 pipeline cache 根目录也会生成 `render-report.json`。
 
 ## 标准输出与标准错误
 

@@ -25,6 +25,22 @@
 5. `04-btt`
 6. `05-publish`
 
+这是没有 renderer contract 时的 legacy 布局。`article-render/v1` 模式使用扩展布局：
+
+```text
+00-source/
+01-contract/
+02-prepare/
+03-hast/
+04-semantic/
+05-last/
+06-btt/
+07-publish/
+render-report.json
+```
+
+`01-contract` 保存选择来源、继承合并后的合同和能力表；`04-semantic` 保存 figure、table、equation、callout 和 footnote 的结构化分析结果。显式 `--render-report` 时，同一份报告还会写到指定路径。
+
 `--dry-run` 的作用不是“跳过流水线”，而是：
 
 1. 仍然完整执行输入解析、preset、预处理、AST 转换和 BTT patch。

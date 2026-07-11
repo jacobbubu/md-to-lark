@@ -175,13 +175,16 @@ Guardrails:
 - Title derivation, title prefix, and single-H1 promotion
 - Local attachment and image detection with real upload
 - Programmatic image display width control through `imageSizeResolver`
+- Versioned `article-render/v1` contracts with inheritance, capability negotiation, strict pre-publish validation, and render reports
+- Semantic figures, tables, equations, callouts, and GFM footnotes rendered to native Lark block structures
+- Automatic `assets/manifest.yml` image sizing in renderer-contract mode
 - Remote image download and standalone URL preparation
 - Mermaid `text-drawing` and `board` output paths
 - Opt-in single-dollar inline math parsing for LaTeX-heavy papers
 - Table width heuristics and numeric-column right alignment
 - Chinese Markdown formatting preset (`zh-format`)
 - Ordered preset composition from CLI and programmatic usage
-- Stage cache output from `00-source` to `05-publish`
+- Legacy stage cache output from `00-source` to `05-publish`; protocol mode adds contract and semantic stages through `07-publish`
 - Programmatic access through `publishMdToLark`
 
 ## Where To Read Next

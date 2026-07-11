@@ -1,13 +1,20 @@
-import { getPublishMdUsage, hasPublishMdHelpFlag, parsePublishMdArgs, type PublishMdCliOptions } from './args.js';
+import {
+  getPublishMdUsage,
+  hasPublishMdHelpFlag,
+  parsePublishMdArgs,
+  type PublishMdCliOptions,
+  type PublishMdToLarkOptions,
+} from './args.js';
 import { resolvePublishInputSet } from './input-resolver.js';
 import { loadMarkdownPresets } from './preset-loader.js';
 import { createDocument, listFolderChildren, normalizeDocumentId } from '../../lark/docx/ops.js';
 import { processSingleMarkdownFile } from '../../publish/process-file.js';
 import { buildPublishRuntime, logPublishRuntimeSummary } from '../../publish/runtime.js';
 import { sleep } from '../../shared/rate-limiter.js';
+import { getRendererCapabilities, validateRendererContract } from '../../protocol/index.js';
 
 export { getPublishMdUsage, parsePublishMdArgs };
-export type { PublishMdCliOptions };
+export type { PublishMdCliOptions, PublishMdToLarkOptions };
 
 export interface PublishMdResult {
   documentId: string | null;
@@ -94,26 +101,36 @@ function createFolderDocumentResolver(
 }
 
 export async function publishMdToLark(
-  options: PublishMdCliOptions,
+  options: PublishMdToLarkOptions,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<PublishMdResult[]> {
-  const inputSet = await resolvePublishInputSet(options.inputPath);
-  const markdownPresets = await loadMarkdownPresets(resolveMarkdownPresetRefs(options));
-  if (options.documentId && inputSet.markdownFiles.length !== 1) {
+  const publishOptions: PublishMdCliOptions = {
+    ...options,
+    folderToken: options.folderToken?.trim() || env.LARK_FOLDER_TOKEN?.trim() || '',
+    dryRun: options.dryRun ?? false,
+  };
+  if (!publishOptions.documentId && !publishOptions.folderToken) {
+    throw new Error('Folder token is required when documentId is not provided.');
+  }
+  const inputSet = await resolvePublishInputSet(publishOptions.inputPath);
+  const markdownPresets = await loadMarkdownPresets(resolveMarkdownPresetRefs(publishOptions));
+  if (publishOptions.documentId && inputSet.markdownFiles.length !== 1) {
     throw new Error('--doc only supports single markdown input file.');
   }
 
-  const runtime = buildPublishRuntime(options, env, markdownPresets);
+  const runtime = buildPublishRuntime(publishOptions, env, markdownPresets);
   logPublishRuntimeSummary(runtime, inputSet.markdownFiles.length, inputSet.mode);
 
-  const normalizedDocumentId = options.documentId ? normalizeDocumentId(options.documentId) : undefined;
+  const normalizedDocumentId = publishOptions.documentId ? normalizeDocumentId(publishOptions.documentId) : undefined;
   const resolveTargetDocumentId =
-    options.dryRun || normalizedDocumentId ? undefined : createFolderDocumentResolver(runtime, options);
+    publishOptions.dryRun || normalizedDocumentId ? undefined : createFolderDocumentResolver(runtime, publishOptions);
   const results: PublishMdResult[] = [];
 
   for (let index = 0; index < inputSet.markdownFiles.length; index += 1) {
     const markdownPath = inputSet.markdownFiles[index]!;
-    const perFileOptions = normalizedDocumentId ? { ...options, documentId: normalizedDocumentId } : options;
+    const perFileOptions = normalizedDocumentId
+      ? { ...publishOptions, documentId: normalizedDocumentId }
+      : publishOptions;
     const result = await processSingleMarkdownFile({
       runtime,
       inputSet,
@@ -129,7 +146,7 @@ export async function publishMdToLark(
       documentUrl: result.documentUrl,
     });
 
-    if (!options.dryRun && index < inputSet.markdownFiles.length - 1 && runtime.publishCooldownMs > 0) {
+    if (!publishOptions.dryRun && index < inputSet.markdownFiles.length - 1 && runtime.publishCooldownMs > 0) {
       console.error(
         `[${index + 1}/${inputSet.markdownFiles.length}] Cooldown ${runtime.publishCooldownMs}ms before next markdown...`,
       );
@@ -143,6 +160,20 @@ export async function publishMdToLark(
 export async function runPublishMdToLarkCli(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<void> {
   if (hasPublishMdHelpFlag(argv)) {
     console.log(getPublishMdUsage());
+    return;
+  }
+  if (argv.includes('--print-capabilities')) {
+    const rendererIndex = argv.indexOf('--renderer');
+    const renderer = rendererIndex >= 0 ? argv[rendererIndex + 1] : undefined;
+    console.log(JSON.stringify(getRendererCapabilities(renderer), null, 2));
+    return;
+  }
+  const validateIndex = argv.indexOf('--validate-contract');
+  if (validateIndex >= 0) {
+    const contractPath = argv[validateIndex + 1];
+    if (!contractPath) throw new Error('Missing value for --validate-contract.');
+    const resolved = await validateRendererContract(contractPath);
+    console.log(JSON.stringify(resolved, null, 2));
     return;
   }
   const options = parsePublishMdArgs(argv, env);

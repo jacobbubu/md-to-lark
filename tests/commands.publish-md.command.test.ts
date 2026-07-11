@@ -113,6 +113,24 @@ test('publishMdToLark dry-run succeeds for single markdown file', async (t) => {
   assert.match(publishResult.title, /^\d{8}-Dry Run Title$/);
 });
 
+test('publishMdToLark programmatic options resolve folderToken from env', async (t) => {
+  const dir = await createTempDir();
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'env-folder.md');
+  await writeFile(file, '# Env Folder\n', 'utf8');
+  const results = await withSilencedConsole(() =>
+    publishMdToLark(
+      {
+        inputPath: file,
+        pipelineCacheDir: path.join(dir, 'cache'),
+        dryRun: true,
+      },
+      { ...baseEnv, LARK_FOLDER_TOKEN: 'fld_from_env' },
+    ),
+  );
+  assert.equal(results[0]?.status, 'dry-run');
+});
+
 test('publishMdToLark dry-run succeeds for directory input with multiple markdown files', async (t) => {
   const dir = await createTempDir();
   t.after(async () => {

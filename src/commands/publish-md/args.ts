@@ -17,6 +17,12 @@ export interface PublishMdCliOptions {
   pipelineCacheDir?: string;
   singleDollarTextMath?: boolean;
   imageSizeResolver?: ImageSizeResolver;
+  imageSizeManifestPath?: string;
+  renderer?: string;
+  rendererContractPath?: string;
+  rendererDefaultContractPath?: string;
+  strict?: boolean;
+  renderReportPath?: string;
   mermaidTarget?: MermaidRenderTarget;
   mermaidBoardSyntaxType?: number;
   mermaidBoardStyleType?: number;
@@ -24,9 +30,14 @@ export interface PublishMdCliOptions {
   dryRun: boolean;
 }
 
+export interface PublishMdToLarkOptions extends Omit<PublishMdCliOptions, 'folderToken' | 'dryRun'> {
+  folderToken?: string;
+  dryRun?: boolean;
+}
+
 function usage(): string {
   return [
-    'Usage: npm run publish:md -- --input <file.md|dir> [--title <doc_title_or_prefix>] [--date-prefix|--no-date-prefix] [--preset <preset_name_or_module_path>]... [--document-base-url <base_url>] [--resource-base-dir <dir>] [--folder <folder_token>] [--doc <document_id>] [--download-remote-images|--no-download-remote-images] [--yt-dlp-path <path>] [--yt-dlp-cookies-path <path>] [--pipeline-cache-dir <dir>] [--single-dollar-text-math] [--mermaid-target <text-drawing|board>] [--mermaid-board-syntax-type <int>] [--mermaid-board-style-type <int>] [--mermaid-board-diagram-type <int>] [--dry-run] [--help|-h]',
+    'Usage: npm run publish:md -- --input <file.md|dir> [--renderer lark] [--renderer-contract <path>] [--strict] [--render-report <path>] [--image-size-manifest <path>] [other options]',
     '',
     'Options:',
     '  --input   Markdown file path, or directory path (publish all *.md recursively).',
@@ -36,6 +47,12 @@ function usage(): string {
     '  --preset  Optional preset module path (js/mjs/cjs/ts) or built-in name (e.g. medium). Repeatable; presets run in the given order before publish pipeline.',
     '  --document-base-url Base URL used to build documentUrl results (for example https://li.feishu.cn).',
     '  --resource-base-dir Base directory used to resolve relative local image/file paths. Default: the current markdown file directory.',
+    '  --renderer Target renderer. Default: lark.',
+    '  --renderer-contract Explicit article-render/v1 contract path.',
+    '  --renderer-default-contract Fallback renderer contract path when no article contract is found.',
+    '  --strict Require a valid renderer contract and fail before publish on semantic errors.',
+    '  --render-report Write the article-render/v1 JSON report to this path.',
+    '  --image-size-manifest Explicit assets/manifest.yml path for image display sizing.',
     '  --folder  Feishu folder token. Default: LARK_FOLDER_TOKEN from .env',
     '  --doc     Existing Feishu document id (single-file only). If set, publish directly into this doc (and clear content first).',
     '  --download-remote-images    Enable prepare-stage remote image pre-download + link rewrite.',
@@ -87,6 +104,12 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
   const presetPaths: string[] = [];
   let documentBaseUrl = '';
   let resourceBaseDir = '';
+  let renderer = '';
+  let rendererContractPath = '';
+  let rendererDefaultContractPath = '';
+  let strict: boolean | undefined;
+  let renderReportPath = '';
+  let imageSizeManifestPath = '';
   let folderToken = (env.LARK_FOLDER_TOKEN ?? '').trim();
   let documentId: string | undefined;
   let downloadRemoteImages: boolean | undefined;
@@ -166,6 +189,51 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
       const value = argv[i + 1];
       if (!value) throw new Error('Missing value for --resource-base-dir.');
       resourceBaseDir = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--renderer') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --renderer.');
+      renderer = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--renderer-contract') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --renderer-contract.');
+      rendererContractPath = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--renderer-default-contract') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --renderer-default-contract.');
+      rendererDefaultContractPath = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--strict') {
+      strict = true;
+      continue;
+    }
+
+    if (arg === '--render-report') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --render-report.');
+      renderReportPath = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--image-size-manifest') {
+      const value = argv[i + 1];
+      if (!value) throw new Error('Missing value for --image-size-manifest.');
+      imageSizeManifestPath = value;
       i += 1;
       continue;
     }
@@ -288,6 +356,12 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
       : {}),
     ...(documentBaseUrl.trim() ? { documentBaseUrl: documentBaseUrl.trim() } : {}),
     ...(resourceBaseDir.trim() ? { resourceBaseDir: resourceBaseDir.trim() } : {}),
+    ...(renderer.trim() ? { renderer: renderer.trim() } : {}),
+    ...(rendererContractPath.trim() ? { rendererContractPath: rendererContractPath.trim() } : {}),
+    ...(rendererDefaultContractPath.trim() ? { rendererDefaultContractPath: rendererDefaultContractPath.trim() } : {}),
+    ...(strict === undefined ? {} : { strict }),
+    ...(renderReportPath.trim() ? { renderReportPath: renderReportPath.trim() } : {}),
+    ...(imageSizeManifestPath.trim() ? { imageSizeManifestPath: imageSizeManifestPath.trim() } : {}),
     folderToken,
     ...(documentId ? { documentId: documentId.trim() } : {}),
     ...(downloadRemoteImages === undefined ? {} : { downloadRemoteImages }),

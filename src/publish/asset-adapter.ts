@@ -21,7 +21,11 @@ export interface LocalAsset {
   mediaKind?: 'image' | 'video' | 'audio' | 'file';
 }
 
-export function applyStandaloneAttachmentTransforms(last: LASTModel, baseDir: string): Map<string, LocalAsset> {
+export function applyStandaloneAttachmentTransforms(
+  last: LASTModel,
+  baseDir: string,
+  options: { missingLocalImage?: 'fallback' | 'error' } = {},
+): Map<string, LocalAsset> {
   const localAssetByBlockId = new Map<string, LocalAsset>();
 
   for (const block of Object.values(last.blocks)) {
@@ -111,6 +115,9 @@ export function applyStandaloneAttachmentTransforms(last: LASTModel, baseDir: st
     const resolvedPath = resolveLocalPathFromSource(sourceUrl, baseDir);
     if (!resolvedPath) continue;
     if (!existsSync(resolvedPath)) {
+      if (options.missingLocalImage === 'error') {
+        throw new Error(`Missing local image: ${sourceUrl} (resolved to ${resolvedPath})`);
+      }
       last.blocks[block.id] = {
         id: block.id,
         ...(block.bttId ? { bttId: block.bttId } : {}),

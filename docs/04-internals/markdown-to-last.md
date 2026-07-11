@@ -55,11 +55,13 @@ Markdown -> HAST -> LAST
 2. fenced code block 里的 `$...$` 保持代码内容
 3. GFM table cell 里的 `$...$` 会在开启后正常进入 inline equation
 
-## frontmatter 为什么会先改写成代码块
+## frontmatter 的两种模式
 
 这是这一层里最重要的特殊处理之一。
 
-当前实现不会直接把开头的 YAML/TOML frontmatter 留给普通 Markdown 解析，而是会先把它重写成 fenced code block。
+没有 renderer contract 时，开头的 YAML/TOML frontmatter 会继续改写成 fenced code block，保持旧行为。
+
+存在 `article-render/v1` 合同时，frontmatter 会先用于合同发现，然后从可见正文移除。协议模式使用 `remark-frontmatter` 和 YAML 数据解析，不会把 frontmatter 发布到飞书。
 
 这样做的原因是：
 
@@ -76,6 +78,8 @@ Markdown -> HAST -> LAST
 当前入口是：
 
 1. `src/pipeline/hast-to-last.ts`
+
+协议模式在 HAST 和 LAST 之间增加可检查的 semantic 阶段。`remark-directive` 节点和 GFM footnote 会先规范成 `m2l-*` 语义节点，再执行 ID、引用、表格、KaTeX、Callout 子块和资源校验。
 
 这一段的目标不是生成 HTML，也不是生成飞书原始 payload，而是生成 `LAST`。
 
@@ -183,6 +187,8 @@ linked image 也会保留为图片块：
 2. 外层链接会保存在 selector 元数据里，但当前飞书 image block 渲染路径不把它变成可点击图片
 
 程序化调用可以传 `imageSizeResolver`，按 Markdown 原始 `src` 返回 `widthRatio` 或 `widthPx`。这一层会把尺寸信息写进 LAST image payload 的 `width` 字段，后续 BTT 和飞书渲染会继续透传。
+
+协议模式还可以读取 `imageSizeManifestPath` 或自动发现 `resourceBaseDir/assets/manifest.yml`。Figure directive 的 `width` 优先级最高，其后是程序化 resolver、manifest、合同默认比例和 legacy 默认宽度。
 
 ### 可嵌入链接
 

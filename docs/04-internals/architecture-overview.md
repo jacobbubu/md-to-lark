@@ -11,7 +11,7 @@
 当前主结构可以概括成这条线：
 
 ```text
-CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
+CLI -> commands -> protocol/pipeline -> semantic -> LAST -> interop/BTT -> lark/docx -> shared
 ```
 
 它的核心思想不是“直接把 Markdown 渲染成飞书”，而是先做分阶段转换，再在最后一段把结果写进飞书。
@@ -75,12 +75,17 @@ CLI -> commands -> pipeline -> LAST -> interop/BTT -> lark/docx -> shared
 1. `src/pipeline/markdown/md-to-hast.ts`
 2. `src/pipeline/markdown/prepare-markdown.ts`
 3. `src/pipeline/hast-to-last.ts`
+4. `src/pipeline/markdown/md-to-semantic-hast.ts`
 
 这里负责：
 
 1. 把 Markdown 解析成 HAST
 2. 在解析前做远程资源预处理
 3. 把 HAST 转成项目内部语义模型 `LAST`
+
+### `src/protocol/`
+
+这一层实现 `article-render/v1`：frontmatter 合同发现、继承合并、能力协商、严格诊断和合同校验。没有合同的文档不会进入这一层的协议行为。
 
 这层仍然是“内容理解与结构转换”，还没有进入飞书 API 语义。
 
