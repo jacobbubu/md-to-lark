@@ -95,7 +95,7 @@ const results = await publishMdToLark(options, env);
 4. 预处理默认开关
 5. 限流和超时参数
 
-如果你传的 `env` 不完整，程序化调用也会像 CLI 一样失败。
+真实发布时，如果你传的 `env` 不完整，程序化调用也会像 CLI 一样失败。纯本地 `dryRun: true` 不要求飞书应用凭据。
 
 ## 一个最小 dry-run 例子
 
@@ -107,17 +107,11 @@ import { publishMdToLark } from '../src/index.ts';
 const results = await publishMdToLark(
   {
     inputPath: './test-md/comp/comp.md',
-    folderToken: process.env.LARK_FOLDER_TOKEN ?? 'fld_demo',
     documentBaseUrl: process.env.LARK_DOCUMENT_BASE_URL,
     resourceBaseDir: './test-md/comp',
     dryRun: true,
   },
-  {
-    ...process.env,
-    LARK_APP_ID: process.env.LARK_APP_ID ?? 'demo_app_id',
-    LARK_APP_SECRET: process.env.LARK_APP_SECRET ?? 'demo_app_secret',
-    LARK_TOKEN_TYPE: process.env.LARK_TOKEN_TYPE ?? 'tenant',
-  },
+  process.env,
 );
 
 console.log(results);
@@ -229,7 +223,9 @@ await publishMdToLark(
 );
 ```
 
-合同选择优先级是：显式 `rendererContractPath`、frontmatter 声明、同目录 `<basename>.lark.yml`、`rendererDefaultContractPath`。协议模式会移除 frontmatter，并在远端文档创建或清空前完成 capability、directive、footnote、KaTeX、资源和 Lark parent-child 校验。
+合同选择优先级是：显式 `rendererContractPath`、frontmatter 声明、同目录 `<basename>.lark.yml`、`rendererDefaultContractPath`。协议模式会移除 frontmatter，并在远端文档创建或清空前完成 capability、directive、footnote、KaTeX、raw HTML 内容损失、资源和 Lark parent-child 校验。
+
+当 `currency_policy` 为 `protect` 时，独立金额 token 会保持普通文本；当值为 `parse` 时，不应用这层保护。协议模式只忽略纯 HTML 注释，其他 raw HTML 在严格模式中是阻断错误，在非严格模式中产生 warning。
 
 如果调用方把 Markdown 复制到临时目录，应该把原文章合同解析成绝对路径后传入 `rendererContractPath`；`resourceBaseDir` 仍指向原文章目录。
 
@@ -316,10 +312,10 @@ CLI 本质上也是在调用这层函数。
 
 ## 常见限制
 
-1. `publishMdToLark` 不会替你补齐必需环境变量
-2. dry-run 也会先校验飞书应用配置
+1. 真实发布时 `publishMdToLark` 不会替你补齐必需环境变量
+2. 纯本地 dry-run 不需要飞书应用配置或目标文档配置
 3. `documentId` 只支持单文件模式
-4. `folderToken` 在没有 `documentId` 时仍然必须可用
+4. 正式发布且没有 `documentId` 时，`folderToken` 必须可用
 
 ## 相关文档
 

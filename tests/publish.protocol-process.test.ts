@@ -139,3 +139,87 @@ test('strict semantic errors stop before any remote document mutation', async (t
   const report = JSON.parse(await readFile(article.reportPath, 'utf8')) as { errors?: Array<{ code?: string }> };
   assert.ok(report.errors?.some((error) => error.code === 'unknown-directive'));
 });
+
+test('strict raw HTML stops before LAST and BTT generation with a render report diagnostic', async (t) => {
+  const article = await setupProtocolArticle(
+    t,
+    [
+      '# Raw HTML',
+      '',
+      'Before.[^1]',
+      '',
+      '<table>',
+      '  <tr><td>Plan A[^2]</td></tr>',
+      '</table>',
+      '',
+      '[^1]: Before.',
+      '[^2]: Inside.',
+    ].join('\n'),
+  );
+  const cacheDir = path.join(article.dir, 'cache');
+  await assert.rejects(
+    () =>
+      publishMdToLark(
+        {
+          inputPath: article.inputPath,
+          pipelineCacheDir: cacheDir,
+          renderReportPath: article.reportPath,
+          downloadRemoteImages: false,
+          titleDatePrefix: false,
+          dryRun: true,
+        },
+        {},
+      ),
+    /semantic validation failed.*Raw HTML <table>/,
+  );
+  const report = JSON.parse(await readFile(article.reportPath, 'utf8')) as {
+    errors?: Array<{ code?: string; line?: number; column?: number }>;
+    warnings?: Array<{ code?: string; message?: string }>;
+  };
+  assert.ok(
+    report.errors?.some((error) => error.code === 'unsupported-raw-html' && error.line === 5 && error.column === 1),
+  );
+  assert.equal(
+    report.warnings?.some((warning) => warning.code === 'unreferenced-footnote' && warning.message?.includes('2')),
+    false,
+  );
+  const [stageName] = await (await import('node:fs/promises')).readdir(cacheDir);
+  await assert.rejects(() => readFile(path.join(cacheDir, stageName!, '05-last', 'last.json')));
+});
+
+test('protocol dry-run reports one real equation when prose contains multiple currency amounts', async (t) => {
+  const article = await setupProtocolArticle(
+    t,
+    [
+      '# Currency',
+      '',
+      'Revenue rises from $45,000 per person to $1M per person.',
+      '',
+      'The median is $50k/year, the floor is $1M, and later becomes $10M.',
+      '',
+      'Aid rises from $1,200 to $10k per person.',
+      '',
+      'Real math must remain math: $P(y \\mid x)$.',
+    ].join('\n'),
+  );
+  await publishMdToLark(
+    {
+      inputPath: article.inputPath,
+      pipelineCacheDir: path.join(article.dir, 'cache'),
+      renderReportPath: article.reportPath,
+      downloadRemoteImages: false,
+      singleDollarTextMath: true,
+      titleDatePrefix: false,
+      dryRun: true,
+    },
+    {},
+  );
+  const report = JSON.parse(await readFile(article.reportPath, 'utf8')) as {
+    counts?: { source?: { equations?: number } };
+    warnings?: unknown[];
+    errors?: unknown[];
+  };
+  assert.equal(report.counts?.source?.equations, 1);
+  assert.deepEqual(report.warnings, []);
+  assert.deepEqual(report.errors, []);
+});

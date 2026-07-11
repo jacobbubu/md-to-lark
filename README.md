@@ -56,8 +56,8 @@ LARK_DOCUMENT_BASE_URL="https://li.feishu.cn"
 
 Notes:
 
-- `--dry-run` still validates Feishu configuration first. It is not a zero-config mode.
-- As long as `--doc` is not provided, `LARK_FOLDER_TOKEN` is required for single-file, directory, dry-run, and real publish modes.
+- Pure local `--dry-run` does not require Feishu credentials, `--folder`, or `--doc`.
+- Real publishing requires either `--doc` or `LARK_FOLDER_TOKEN`/`--folder`, plus valid Feishu credentials.
 
 The first run should use a built-in sample:
 

@@ -192,11 +192,11 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --pipeline-cache-
 
 ## 边界和常见误解
 
-### dry-run 不是零配置模式
+### dry-run 不需要飞书目标配置
 
-当前实现里，CLI 在进入 dry-run 之前也会先校验飞书相关环境变量。
+纯本地 dry-run 可以在没有 `LARK_APP_ID`、`LARK_APP_SECRET`、folder token 或 document id 时执行。真实发布仍会校验这些配置。
 
-所以如果你缺少 `LARK_APP_ID`、`LARK_APP_SECRET` 或 `LARK_TOKEN_TYPE`，dry-run 也不会开始执行。
+dry-run 只保证不调用飞书 API。如果启用了远程图片预处理或 `yt-dlp`，prepare 阶段仍可能访问外部资源。
 
 ### dry-run 仍然会写磁盘
 

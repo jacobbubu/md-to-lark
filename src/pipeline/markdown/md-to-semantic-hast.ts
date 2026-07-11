@@ -13,9 +13,12 @@ const SUPPORTED_CONTAINER_DIRECTIVES = new Set(['figure', 'table', 'equation', '
 const SUPPORTED_LEAF_DIRECTIVES = new Set(['caption', 'note', 'source']);
 const FORBIDDEN_MATH_COMMAND_RE =
   /\\(?:includegraphics|include|input|cite|documentclass|usepackage|begin\{document\}|end\{document\})\b/;
-const CURRENCY_MATH_RE = /^\s*(?:[$€£¥]\s*)?\d[\d,.]*(?:[KMBT])?(?:\s*-\s*[$€£¥]?\s*\d[\d,.]*(?:[KMBT])?)?\s*$/i;
 const INLINE_CODE_PIPE_PLACEHOLDER = '\uE000';
 const INLINE_MATH_PIPE_PLACEHOLDER = '\uE001';
+const CURRENCY_DOLLAR_PLACEHOLDER = '\uE002';
+const CURRENCY_TOKEN_RE =
+  /(?<![\\$])\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[KMBT])?(?:\/(?:year|yr))?(?=$|[\s)\]}>.,;:!?"'%…—–-])/gi;
+const CURRENCY_MATH_RE = /^\s*(?:[$€£¥]\s*)?\d[\d,.]*(?:[KMBT])?(?:\s*-\s*[$€£¥]?\s*\d[\d,.]*(?:[KMBT])?)?\s*$/i;
 
 interface MdastNode {
   type?: string;
@@ -28,8 +31,8 @@ interface MdastNode {
   children?: MdastNode[];
   data?: Record<string, unknown>;
   position?: {
-    start?: { offset?: number };
-    end?: { offset?: number };
+    start?: { offset?: number; line?: number; column?: number };
+    end?: { offset?: number; line?: number; column?: number };
   };
 }
 
@@ -125,12 +128,7 @@ function protectCurrencyDollars(markdown: string): string {
   const tree = unified().use(remarkParse).parse(markdown) as unknown as MdastNode;
   const ranges = collectProtectedMdastRanges(tree);
   const protectSegment = (segment: string): string =>
-    segment
-      .replace(
-        /(?<!\\)\$(\d[\d,.]*(?:[KMBT])?)\s*[-–]\s*\$(\d[\d,.]*(?:[KMBT])?)/gi,
-        (_all, left, right) => `\\$${left}-\\$${right}`,
-      )
-      .replace(/(?<!\\)\$(\d[\d,.]*(?:[KMBT])?)\$/gi, (_all, amount) => `\\$${amount}\\$`);
+    segment.replace(CURRENCY_TOKEN_RE, (token) => CURRENCY_DOLLAR_PLACEHOLDER + token.slice(1));
   let output = '';
   let cursor = 0;
   for (const range of ranges) {
@@ -140,6 +138,69 @@ function protectCurrencyDollars(markdown: string): string {
   }
   output += protectSegment(markdown.slice(cursor));
   return output;
+}
+
+function restoreCurrencyPlaceholders(hast: HastRoot): void {
+  const restore = (value: string): string => value.replaceAll(CURRENCY_DOLLAR_PLACEHOLDER, '$');
+  const visit = (node: HastRootContent): void => {
+    if (node.type === 'text') {
+      node.value = restore(node.value);
+      return;
+    }
+    if (!isElement(node)) return;
+    for (const [key, value] of Object.entries(node.properties ?? {})) {
+      if (typeof value === 'string') node.properties[key] = restore(value);
+      else if (Array.isArray(value)) {
+        node.properties[key] = value.map((item) => (typeof item === 'string' ? restore(item) : item));
+      }
+    }
+    for (const child of node.children) visit(child);
+  };
+  for (const child of hast.children) visit(child);
+}
+
+function isHtmlCommentOnly(value: string): boolean {
+  let remaining = value.trim();
+  while (remaining.startsWith('<!--')) {
+    const end = remaining.indexOf('-->');
+    if (end < 0) return false;
+    remaining = remaining.slice(end + 3).trim();
+  }
+  return remaining.length === 0;
+}
+
+function analyzeRawHtmlMdast(
+  tree: MdastNode,
+  options: MarkdownToSemanticHastOptions,
+): { diagnostics: ProtocolDiagnostic[]; referencedFootnoteIds: Set<string> } {
+  const diagnostics: ProtocolDiagnostic[] = [];
+  const referencedFootnoteIds = new Set<string>();
+  const visit = (node: MdastNode): void => {
+    if (node.type === 'html' && typeof node.value === 'string') {
+      if (isHtmlCommentOnly(node.value)) return;
+      for (const match of node.value.matchAll(/\[\^([^\]\s]+)\]/g)) {
+        if (match[1]) referencedFootnoteIds.add(match[1].toLowerCase());
+      }
+      const tag = /<\s*\/?\s*([A-Za-z][\w:-]*)/.exec(node.value)?.[1]?.toLowerCase() ?? 'html';
+      diagnostics.push({
+        severity: options.strict ? 'error' : 'warning',
+        code: 'unsupported-raw-html',
+        message:
+          tag === 'table'
+            ? 'Raw HTML <table> would be discarded in Lark protocol mode. Convert it to a GFM table before publication.'
+            : 'Raw HTML <' +
+              tag +
+              '> would be discarded in Lark protocol mode. Convert it to Markdown before publication.',
+        ...(options.inputPath ? { sourcePath: options.inputPath } : {}),
+        ...(typeof node.position?.start?.line === 'number' ? { line: node.position.start.line } : {}),
+        ...(typeof node.position?.start?.column === 'number' ? { column: node.position.start.column } : {}),
+      });
+      return;
+    }
+    for (const child of node.children ?? []) visit(child);
+  };
+  visit(tree);
+  return { diagnostics, referencedFootnoteIds };
 }
 
 function protectTableInlinePipes(markdown: string): string {
@@ -581,6 +642,7 @@ function analyzeSemanticHast(hast: HastRoot, options: MarkdownToSemanticHastOpti
         code: 'unreferenced-footnote',
         message: `Footnote definition is not referenced: ${id}.`,
         ...(options.inputPath ? { sourcePath: options.inputPath } : {}),
+        semanticId: id,
       });
   }
   if (footnoteReferences.size > 0) {
@@ -748,13 +810,26 @@ export async function markdownToSemanticHast(
     .use(semanticDirectivePlugin)
     .use(remarkRehype, { allowDangerousHtml: false });
   const mdast = processor.parse(content);
+  const rawHtml = analyzeRawHtmlMdast(mdast as unknown as MdastNode, options);
   const unparsedFootnoteReferences = collectUnparsedFootnoteReferences(mdast as unknown as MdastNode);
   const hast = (await processor.run(mdast)) as HastRoot;
   restoreTableInlinePipes(hast);
-  if (options.target?.math?.currency_policy !== 'parse') restoreCurrencyMath(hast, content);
+  if (options.target?.math?.currency_policy !== 'parse') {
+    restoreCurrencyPlaceholders(hast);
+    restoreCurrencyMath(hast, content);
+  }
   assignAutomaticEquationNumbers(hast);
   normalizeMathHast(hast, options.target?.math);
   const semantic = analyzeSemanticHast(hast, options);
+  if (rawHtml.referencedFootnoteIds.size > 0) {
+    semantic.diagnostics = semantic.diagnostics.filter(
+      (diagnostic) =>
+        diagnostic.code !== 'unreferenced-footnote' ||
+        !diagnostic.semanticId ||
+        !rawHtml.referencedFootnoteIds.has(diagnostic.semanticId.toLowerCase()),
+    );
+  }
+  semantic.diagnostics.unshift(...rawHtml.diagnostics);
   for (const id of unparsedFootnoteReferences) {
     semantic.counts.footnoteReferences += 1;
     if (

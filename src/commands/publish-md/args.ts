@@ -76,7 +76,7 @@ function usage(): string {
     '  5) If markdown has exactly one h1 and --title is not provided, that h1 becomes doc title, then removed from content, and remaining headings are promoted by one level.',
     '  6) Stage cache layout per markdown: 00-source, 01-prepare, 02-hast, 03-last, 04-btt, 05-publish.',
     '  7) Prepare stage can pre-download remote markdown images and optional yt-dlp URL lines.',
-    '  8) Leading YAML/TOML frontmatter is rewritten as fenced code block (yaml/toml), so it stays visible and will not be parsed as headings.',
+    '  8) In article-render/v1 protocol mode, leading YAML frontmatter is parsed for article_render configuration and removed from visible output. In legacy mode, unrecognized frontmatter follows the legacy preparation policy.',
     '  9) Missing local asset files are skipped/degraded to text fallback; publish will not fail only because a referenced local path is absent.',
     '  10) Relative local asset paths resolve against the markdown file directory by default; use --resource-base-dir to override that base.',
     '',
@@ -338,7 +338,7 @@ export function parsePublishMdArgs(argv: string[], env: NodeJS.ProcessEnv = proc
     throw new Error('Input path is required. Use --input <file.md|dir>.');
   }
 
-  if (!documentId && !folderToken) {
+  if (!dryRun && !documentId && !folderToken) {
     throw new Error('Folder token is required when --doc is not provided. Use --folder or set LARK_FOLDER_TOKEN.');
   }
 

@@ -91,12 +91,23 @@ export interface PublishRuntime {
   prepareConfig: PublishPrepareRuntimeConfig;
 }
 
+function withDryRunLarkDefaults(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const tokenType = env.LARK_TOKEN_TYPE?.trim();
+  return {
+    ...env,
+    LARK_APP_ID: env.LARK_APP_ID?.trim() || 'dry-run',
+    LARK_APP_SECRET: env.LARK_APP_SECRET?.trim() || 'dry-run',
+    LARK_TOKEN_TYPE: tokenType === 'tenant' || tokenType === 'user' ? tokenType : 'tenant',
+    LARK_USER_ACCESS_TOKEN: env.LARK_USER_ACCESS_TOKEN?.trim() || 'dry-run',
+  };
+}
+
 export function buildPublishRuntime(
   options: PublishMdCliOptions,
   env: NodeJS.ProcessEnv,
   markdownPresets: LoadedMarkdownPreset[],
 ): PublishRuntime {
-  const config = createLarkClientConfigFromEnv(env);
+  const config = createLarkClientConfigFromEnv(options.dryRun ? withDryRunLarkDefaults(env) : env);
   const sdkClient = new lark.Client({
     appId: config.appId,
     appSecret: config.appSecret,
