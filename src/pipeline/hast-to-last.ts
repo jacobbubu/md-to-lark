@@ -24,6 +24,8 @@ import type {
 } from '../last/types.js';
 import { createDefaultImagePayload } from '../last/image-defaults.js';
 import { LAST_TEXTUAL_BLOCK_TYPE_SET } from '../last/textual-block-types.js';
+import type { LarkRendererTarget } from '../protocol/types.js';
+import { parseDirectiveWidth } from './markdown/md-to-semantic-hast.js';
 
 interface ConversionContext {
   blocks: Record<LASTBlockId, LASTBlockNode>;
@@ -31,12 +33,14 @@ interface ConversionContext {
   inlineCounter: number;
   imageSizeContext: ImageSizeResolverBaseContext;
   warnedImageSizeKeys: Set<string>;
+  semanticTarget: LarkRendererTarget;
   imageSizeResolver?: ImageSizeResolver;
 }
 
 export interface ImageDisplaySize {
   widthRatio?: number;
   widthPx?: number;
+  aspectRatio?: number;
 }
 
 export interface ImageSizeResolverContext {
@@ -51,13 +55,17 @@ export interface ImageSizeResolverBaseContext {
   resourceBaseDir?: string;
 }
 
-export type ImageSizeResolver = (imageSrc: string, context: ImageSizeResolverContext) => ImageDisplaySize | undefined;
+export type ImageSizeResolver = (
+  imageSrc: string,
+  context: ImageSizeResolverContext,
+) => ImageDisplaySize | null | undefined;
 
 export interface HastToLASTOptions {
   documentId?: string;
   mode?: 'document' | 'fragment';
   imageSizeResolver?: ImageSizeResolver;
   imageSizeContext?: ImageSizeResolverBaseContext;
+  semanticTarget?: LarkRendererTarget;
 }
 
 const BLOCK_CONTAINER_TAGS: ReadonlySet<string> = new Set([
@@ -86,6 +94,7 @@ function createContext(options: HastToLASTOptions = {}): ConversionContext {
     inlineCounter: 1,
     imageSizeContext: options.imageSizeContext ?? {},
     warnedImageSizeKeys: new Set(),
+    semanticTarget: options.semanticTarget ?? {},
     ...(options.imageSizeResolver ? { imageSizeResolver: options.imageSizeResolver } : {}),
   };
 }
@@ -255,24 +264,35 @@ function buildImageSizeResolverContext(ctx: ConversionContext, image: ImageSourc
   return context;
 }
 
-function toPositiveRoundedWidth(value: number): number | undefined {
+function toPositiveRoundedWidth(value: number, maximum = 1000): number | undefined {
   if (!Number.isFinite(value) || value <= 0) return undefined;
-  return Math.max(1, Math.round(value));
+  return Math.min(maximum, Math.max(1, Math.round(value)));
 }
 
 function applyImageDisplaySize(
   ctx: ConversionContext,
   image: ImageSource,
   block: Extract<LASTBlockNode, { type: 'image' }>,
-): void {
+): boolean {
   if (!ctx.imageSizeResolver || !image.sourceUrl) {
-    return;
+    return false;
   }
 
   const size = ctx.imageSizeResolver(image.sourceUrl, buildImageSizeResolverContext(ctx, image));
   if (!size) {
-    return;
+    return false;
   }
+
+  const applyAspectRatio = (): void => {
+    if (
+      typeof size.aspectRatio === 'number' &&
+      Number.isFinite(size.aspectRatio) &&
+      size.aspectRatio > 0 &&
+      typeof block.payload.width === 'number'
+    ) {
+      block.payload.height = Math.max(1, Math.round(block.payload.width / size.aspectRatio));
+    }
+  };
 
   const hasWidthRatio = typeof size.widthRatio === 'number';
   if (hasWidthRatio) {
@@ -285,8 +305,9 @@ function applyImageDisplaySize(
       const width = toPositiveRoundedWidth(baseWidth * ratio);
       if (width !== undefined) {
         block.payload.width = width;
+        applyAspectRatio();
       }
-      return;
+      return true;
     }
     warnInvalidImageDisplaySize(
       ctx,
@@ -296,10 +317,13 @@ function applyImageDisplaySize(
   }
 
   if (typeof size.widthPx === 'number') {
-    const width = toPositiveRoundedWidth(size.widthPx);
+    const maximum =
+      createDefaultImagePayload(block.parentId ? ctx.blocks[block.parentId]?.type : undefined).width ?? 1000;
+    const width = toPositiveRoundedWidth(size.widthPx, maximum);
     if (width !== undefined) {
       block.payload.width = width;
-      return;
+      applyAspectRatio();
+      return true;
     }
     warnInvalidImageDisplaySize(
       ctx,
@@ -307,6 +331,7 @@ function applyImageDisplaySize(
       `Ignoring invalid image widthPx for ${image.sourceUrl}: ${String(size.widthPx)}. Expected widthPx > 0.`,
     );
   }
+  return false;
 }
 
 function createImageBlock(
@@ -316,6 +341,7 @@ function createImageBlock(
   alt: string | null = null,
   title: string | null = null,
   linkHref: string | null = null,
+  displayOverride?: ImageDisplaySize & { align?: LASTAlign; fallback?: boolean },
 ): LASTBlockId {
   const blockId = nextBlockId(ctx);
   const parentBlock = ctx.blocks[parentId];
@@ -350,8 +376,93 @@ function createImageBlock(
     blockBase.selector = { attrs: selectorAttrs };
   }
 
-  applyImageDisplaySize(ctx, image, blockBase);
+  const resolverMatched = applyImageDisplaySize(ctx, image, blockBase);
+  const shouldApplyOverride = Boolean(displayOverride && (!displayOverride.fallback || !resolverMatched));
+  if (shouldApplyOverride && displayOverride?.widthRatio !== undefined) {
+    const ratio = displayOverride.widthRatio;
+    if (Number.isFinite(ratio) && ratio > 0 && ratio <= 1) {
+      const baseWidth = createDefaultImagePayload(parentBlock?.type).width ?? blockBase.payload.width ?? 0;
+      blockBase.payload.width = Math.max(1, Math.round(baseWidth * ratio));
+    }
+  } else if (shouldApplyOverride && displayOverride?.widthPx !== undefined && displayOverride.widthPx > 0) {
+    const maximum = createDefaultImagePayload(parentBlock?.type).width ?? 1000;
+    blockBase.payload.width = Math.min(maximum, Math.max(1, Math.round(displayOverride.widthPx)));
+  }
+  if (shouldApplyOverride && displayOverride?.aspectRatio && blockBase.payload.width) {
+    blockBase.payload.height = Math.max(1, Math.round(blockBase.payload.width / displayOverride.aspectRatio));
+  }
+  if (displayOverride?.align) blockBase.payload.align = displayOverride.align;
   addBlock(ctx, blockBase);
+  return blockId;
+}
+
+function attachSemanticMeta(ctx: ConversionContext, blockId: LASTBlockId, role: string, semanticId?: string): void {
+  const block = ctx.blocks[blockId];
+  if (!block) return;
+  block.selector = {
+    ...(block.selector ?? {}),
+    labels: [...(block.selector?.labels ?? []), role],
+    attrs: {
+      ...(block.selector?.attrs ?? {}),
+      semanticRole: role,
+      ...(semanticId ? { semanticId } : {}),
+    },
+  };
+}
+
+function normalizeCalloutColor(value: string | null): string | undefined {
+  return value?.trim().toLowerCase().replaceAll('-', '_') || undefined;
+}
+
+function calloutStyleForElement(
+  element: HastElement,
+  footnote: boolean,
+): Extract<LASTBlockNode, { type: 'callout' }>['payload'] {
+  const target = footnote ? undefined : getStringProp(element, 'type');
+  const defaults: Record<string, { backgroundColor: string; borderColor: string }> = {
+    note: { backgroundColor: 'light_gray', borderColor: 'gray' },
+    info: { backgroundColor: 'light_blue', borderColor: 'blue' },
+    tip: { backgroundColor: 'light_green', borderColor: 'green' },
+    warning: { backgroundColor: 'light_yellow', borderColor: 'yellow' },
+    danger: { backgroundColor: 'light_red', borderColor: 'red' },
+    important: { backgroundColor: 'light_purple', borderColor: 'purple' },
+  };
+  const style = defaults[target ?? 'note'] ?? defaults.note!;
+  return {
+    backgroundColor: style.backgroundColor,
+    borderColor: style.borderColor,
+  } as Extract<LASTBlockNode, { type: 'callout' }>['payload'];
+}
+
+function createCalloutBlock(
+  ctx: ConversionContext,
+  parentId: LASTBlockId,
+  element: HastElement,
+  footnote: boolean,
+): LASTBlockId {
+  const blockId = nextBlockId(ctx);
+  const base = calloutStyleForElement(element, footnote);
+  const footnoteTarget = ctx.semanticTarget.footnotes;
+  const backgroundColor = footnote ? normalizeCalloutColor(footnoteTarget?.background_color ?? null) : undefined;
+  const borderColor = footnote ? normalizeCalloutColor(footnoteTarget?.border_color ?? null) : undefined;
+  addBlock(ctx, {
+    id: blockId,
+    type: 'callout',
+    parentId,
+    children: [],
+    payload: {
+      ...base,
+      ...(backgroundColor ? { backgroundColor: backgroundColor as typeof base.backgroundColor } : {}),
+      ...(borderColor ? { borderColor: borderColor as typeof base.borderColor } : {}),
+      ...(footnoteTarget?.icon ? { emojiId: footnoteTarget.icon } : {}),
+    },
+  });
+  attachSemanticMeta(
+    ctx,
+    blockId,
+    footnote ? 'footnote' : 'callout',
+    getStringProp(element, 'semanticId') ?? undefined,
+  );
   return blockId;
 }
 
@@ -566,7 +677,7 @@ function parseInlineNodes(
     if (node.tagName === 'u') {
       nextMarks.underline = true;
     }
-    if (node.tagName === 'a') {
+    if (node.tagName === 'a' || node.tagName === 'm2l-footnote-reference') {
       const href = getStringProp(node, 'href');
       nextMarks.link = href ? { url: href } : null;
     }
@@ -1104,6 +1215,198 @@ function convertParagraph(ctx: ConversionContext, paragraph: HastElement, parent
   return [createTextualBlock(ctx, 'text', parentId, parseInlineNodes(ctx, getChildren(paragraph)))];
 }
 
+function collectSemanticImages(element: HastElement): ImageSource[] {
+  const images: ImageSource[] = [];
+  const visit = (node: HastRootContent): void => {
+    if (!isElement(node)) return;
+    const image = extractImageSourceFromElement(node);
+    if (image?.sourceUrl) {
+      images.push(image);
+      return;
+    }
+    for (const child of getChildren(node)) visit(child);
+  };
+  for (const child of getChildren(element)) visit(child);
+  return images;
+}
+
+function findDirectSemanticChild(element: HastElement, tagName: string): HastElement | undefined {
+  return getChildren(element).find((child): child is HastElement => isElement(child) && child.tagName === tagName);
+}
+
+function createSemanticTextBlock(
+  ctx: ConversionContext,
+  element: HastElement,
+  parentId: LASTBlockId,
+  role: string,
+  semanticId?: string,
+): LASTBlockId {
+  const blockId = createTextualBlock(ctx, 'text', parentId, parseInlineNodes(ctx, getChildren(element)));
+  attachSemanticMeta(ctx, blockId, role, semanticId);
+  return blockId;
+}
+
+function parseSemanticAlign(element: HastElement): LASTAlign | undefined {
+  return parseAlignValue(getStringProp(element, 'align'));
+}
+
+function semanticAnnotationIds(
+  ctx: ConversionContext,
+  wrapper: HastElement,
+  parentId: LASTBlockId,
+  semanticId: string | undefined,
+): Partial<Record<'caption' | 'note' | 'source', LASTBlockId>> {
+  const result: Partial<Record<'caption' | 'note' | 'source', LASTBlockId>> = {};
+  for (const role of ['caption', 'note', 'source'] as const) {
+    const element = findDirectSemanticChild(wrapper, `m2l-${role}`);
+    if (element) result[role] = createSemanticTextBlock(ctx, element, parentId, role, semanticId);
+  }
+  return result;
+}
+
+function convertSemanticFigure(ctx: ConversionContext, figure: HastElement, parentId: LASTBlockId): LASTBlockId[] {
+  const semanticId = getStringProp(figure, 'semanticId') ?? undefined;
+  const display = parseDirectiveWidth(getStringProp(figure, 'width') ?? '');
+  const fallbackRatio = ctx.semanticTarget.figures?.default_width_ratio;
+  const effectiveDisplay =
+    display ??
+    (typeof fallbackRatio === 'number' && fallbackRatio > 0 && fallbackRatio <= 1
+      ? { widthRatio: fallbackRatio, fallback: true }
+      : undefined);
+  const align = parseSemanticAlign(figure);
+  const imageIds = collectSemanticImages(figure).map((image) => {
+    const imageId = createImageBlock(ctx, parentId, image.sourceUrl, image.alt, image.title, image.linkHref, {
+      ...(effectiveDisplay ?? {}),
+      ...(align ? { align } : {}),
+    });
+    attachSemanticMeta(ctx, imageId, 'figure-image', semanticId);
+    return imageId;
+  });
+  const annotations = semanticAnnotationIds(ctx, figure, parentId, semanticId);
+  const target = ctx.semanticTarget.figures;
+  const ids: LASTBlockId[] = [];
+  if (target?.caption_position === 'above' && annotations.caption) ids.push(annotations.caption);
+  if (target?.source_position === 'above' && annotations.source) ids.push(annotations.source);
+  if (target?.note_position === 'above' && annotations.note) ids.push(annotations.note);
+  ids.push(...imageIds);
+  if (target?.caption_position !== 'above' && annotations.caption) ids.push(annotations.caption);
+  if (target?.source_position === 'below-caption' && annotations.source) ids.push(annotations.source);
+  if (target?.note_position !== 'above' && annotations.note) ids.push(annotations.note);
+  if (target?.source_position !== 'above' && target?.source_position !== 'below-caption' && annotations.source) {
+    ids.push(annotations.source);
+  }
+  return ids;
+}
+
+function convertSemanticTable(ctx: ConversionContext, wrapper: HastElement, parentId: LASTBlockId): LASTBlockId[] {
+  const semanticId = getStringProp(wrapper, 'semanticId') ?? undefined;
+  const table = getChildren(wrapper).find(
+    (child): child is HastElement => isElement(child) && child.tagName === 'table',
+  );
+  const annotations = semanticAnnotationIds(ctx, wrapper, parentId, semanticId);
+  const tableIds = table ? convertTable(ctx, table, parentId) : [];
+  for (const tableId of tableIds) attachSemanticMeta(ctx, tableId, 'semantic-table', semanticId);
+  const target = ctx.semanticTarget.tables;
+  const ids: LASTBlockId[] = [];
+  if (target?.caption_position !== 'below' && annotations.caption) ids.push(annotations.caption);
+  if (target?.source_position === 'above' && annotations.source) ids.push(annotations.source);
+  ids.push(...tableIds);
+  if (target?.caption_position === 'below' && annotations.caption) ids.push(annotations.caption);
+  if (annotations.note) ids.push(annotations.note);
+  if (target?.source_position !== 'above' && annotations.source) ids.push(annotations.source);
+  return ids;
+}
+
+function convertSemanticEquation(ctx: ConversionContext, wrapper: HastElement, parentId: LASTBlockId): LASTBlockId[] {
+  const semanticId = getStringProp(wrapper, 'semanticId') ?? undefined;
+  const ids: LASTBlockId[] = [];
+  const equationNumber = getStringProp(wrapper, 'equationNumber');
+  let numberAttached = false;
+  for (const child of getChildren(wrapper)) {
+    if (isElement(child) && ['m2l-caption', 'm2l-note', 'm2l-source'].includes(child.tagName)) continue;
+    for (const blockId of convertBlock(ctx, child, parentId)) {
+      attachSemanticMeta(ctx, blockId, 'equation', semanticId);
+      const block = ctx.blocks[blockId];
+      if (equationNumber && !numberAttached && block && isTextualBlockNode(block)) {
+        block.payload.inlines.push({
+          id: nextInlineId(ctx),
+          kind: 'text_run',
+          marks: createDefaultMarks(),
+          text: ` (${equationNumber})`,
+        });
+        numberAttached = true;
+      }
+      ids.push(blockId);
+    }
+  }
+  const annotations = semanticAnnotationIds(ctx, wrapper, parentId, semanticId);
+  if (annotations.caption) ids.push(annotations.caption);
+  if (annotations.note) ids.push(annotations.note);
+  if (annotations.source) ids.push(annotations.source);
+  return ids;
+}
+
+function prependFootnoteLabel(ctx: ConversionContext, blockId: LASTBlockId, label: string): void {
+  const block = ctx.blocks[blockId];
+  if (!block || !isTextualBlockNode(block)) return;
+  block.payload.inlines.unshift({
+    id: nextInlineId(ctx),
+    kind: 'text_run',
+    marks: { ...createDefaultMarks(), bold: true },
+    text: `[${label}] `,
+  });
+}
+
+function convertSemanticCallout(
+  ctx: ConversionContext,
+  element: HastElement,
+  parentId: LASTBlockId,
+  footnote: boolean,
+): LASTBlockId[] {
+  const output: LASTBlockId[] = [];
+  let calloutId = createCalloutBlock(ctx, parentId, element, footnote);
+  output.push(calloutId);
+  let firstText = true;
+  const appendConverted = (blockId: LASTBlockId): void => {
+    const block = ctx.blocks[blockId];
+    if (!block) return;
+    if (block.type === 'image' || block.type === 'table' || block.type === 'file' || block.type === 'board') {
+      block.parentId = parentId;
+      attachSemanticMeta(
+        ctx,
+        blockId,
+        footnote ? 'footnote-media-sibling' : 'callout-media-sibling',
+        getStringProp(element, 'semanticId') ?? undefined,
+      );
+      output.push(blockId);
+      calloutId = createCalloutBlock(ctx, parentId, element, footnote);
+      output.push(calloutId);
+      return;
+    }
+    const callout = ctx.blocks[calloutId];
+    if (!callout || callout.type !== 'callout') return;
+    block.parentId = calloutId;
+    appendChild(callout, blockId);
+    if (footnote && firstText && isTextualBlockNode(block)) {
+      prependFootnoteLabel(ctx, blockId, getStringProp(element, 'semanticId') ?? '?');
+      firstText = false;
+    }
+  };
+  for (const child of getChildren(element)) {
+    const current = ctx.blocks[calloutId];
+    if (!current || current.type !== 'callout') continue;
+    for (const blockId of convertBlock(ctx, child, calloutId)) appendConverted(blockId);
+  }
+  for (const blockId of [...output]) {
+    const block = ctx.blocks[blockId];
+    if (block?.type === 'callout' && block.children.length === 0) {
+      delete ctx.blocks[blockId];
+      output.splice(output.indexOf(blockId), 1);
+    }
+  }
+  return output;
+}
+
 function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: LASTBlockId): LASTBlockId[] {
   if (isWhitespaceTextNode(node)) {
     return [];
@@ -1153,6 +1456,21 @@ function convertBlock(ctx: ConversionContext, node: HastRootContent, parentId: L
       return [createDividerBlock(ctx, parentId)];
     case 'table':
       return convertTable(ctx, node, parentId);
+    case 'm2l-figure':
+      return convertSemanticFigure(ctx, node, parentId);
+    case 'm2l-table':
+      return convertSemanticTable(ctx, node, parentId);
+    case 'm2l-equation':
+      return convertSemanticEquation(ctx, node, parentId);
+    case 'm2l-callout':
+      return convertSemanticCallout(ctx, node, parentId, false);
+    case 'm2l-footnote':
+      return convertSemanticCallout(ctx, node, parentId, true);
+    case 'm2l-unknown-directive':
+    case 'm2l-caption':
+    case 'm2l-note':
+    case 'm2l-source':
+      return convertUnknownElement(ctx, node, parentId);
     case 'img':
       return [
         createImageBlock(

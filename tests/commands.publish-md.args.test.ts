@@ -60,6 +60,34 @@ test('parsePublishMdArgs parses --resource-base-dir', () => {
   assert.equal(options.resourceBaseDir, './generated-assets');
 });
 
+test('parsePublishMdArgs parses article renderer protocol options', () => {
+  const options = parsePublishMdArgs(
+    [
+      '--input',
+      './article/index-zh.md',
+      '--renderer',
+      'lark',
+      '--renderer-contract',
+      './article/index-zh.lark.yml',
+      '--renderer-default-contract',
+      './config/default.lark.yml',
+      '--strict',
+      '--render-report',
+      './article/reports/render.json',
+      '--image-size-manifest',
+      './article/assets/manifest.yml',
+      '--dry-run',
+    ],
+    { LARK_FOLDER_TOKEN: 'fld_test_token' },
+  );
+  assert.equal(options.renderer, 'lark');
+  assert.equal(options.rendererContractPath, './article/index-zh.lark.yml');
+  assert.equal(options.rendererDefaultContractPath, './config/default.lark.yml');
+  assert.equal(options.strict, true);
+  assert.equal(options.renderReportPath, './article/reports/render.json');
+  assert.equal(options.imageSizeManifestPath, './article/assets/manifest.yml');
+});
+
 test('parsePublishMdArgs parses positional input and --doc without folder', () => {
   const options = parsePublishMdArgs(['./examples/a.md', '--doc', 'doccn123'], {});
   assert.deepEqual(options, {
@@ -167,6 +195,9 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /--preset/);
   assert.match(usage, /--document-base-url/);
   assert.match(usage, /--resource-base-dir/);
+  assert.match(usage, /--renderer-contract/);
+  assert.match(usage, /--render-report/);
+  assert.match(usage, /--image-size-manifest/);
   assert.match(usage, /--download-remote-images/);
   assert.match(usage, /--yt-dlp-path/);
   assert.match(usage, /--pipeline-cache-dir/);

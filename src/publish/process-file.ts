@@ -1,9 +1,10 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { convertLASTToBTT } from '../interop/index.js';
-import { clearDocumentContent, normalizeDocumentId } from '../lark/docx/ops.js';
+import { clearDocumentContent, listAllDocumentBlocks, normalizeDocumentId } from '../lark/docx/ops.js';
 import { renderBTTToDocument, type RenderFailedNode, type RenderMediaTokenMapping } from '../lark/docx/render-btt.js';
-import { hastToLAST, markdownToHast, prepareMarkdownBeforePublish } from '../pipeline/index.js';
+import { hastToLAST, markdownToHast, markdownToSemanticHast, prepareMarkdownBeforePublish } from '../pipeline/index.js';
+import { getRendererCapabilities, resolveRendererContract } from '../protocol/index.js';
 import type { PublishMdCliOptions } from '../commands/publish-md/args.js';
 import type { PublishInputSet } from '../commands/publish-md/input-resolver.js';
 import { applySingleH1TitleRule, buildTitleForMarkdown } from '../commands/publish-md/title-policy.js';
@@ -11,16 +12,22 @@ import { applyStandaloneAttachmentTransforms } from './asset-adapter.js';
 import { patchBTTForMermaidAndAssets } from './btt-patch.js';
 import { buildPipelineDocumentId } from './ids.js';
 import { applyTableColumnWidthHeuristics, collectMermaidPatches, ensureLastBlockBttIds } from './last-normalize.js';
+import { assertValidLastForLark } from './lark-tree-validator.js';
+import { composeImageSizeResolvers, createImageSizeManifestResolver } from './image-size-manifest.js';
+import { createArticleRenderReport, type ArticleRenderReport } from './render-report.js';
 import type { PublishRuntime } from './runtime.js';
 import {
   buildPipelineStagePaths,
   type PipelineStagePaths,
   type PublishStageArtifact,
   writeBttStage,
+  writeContractStage,
   writeHastStage,
   writeLastStage,
   writePrepareStage,
   writePublishStageArtifact,
+  writeRenderReport,
+  writeSemanticStage,
   writeSourceStage,
 } from './stage-cache.js';
 
@@ -100,12 +107,28 @@ export async function processSingleMarkdownFile(
   params: ProcessSingleMarkdownFileParams,
 ): Promise<ProcessSingleMarkdownFileResult> {
   const { runtime, inputSet, options, markdownPath, index, resolveTargetDocumentId } = params;
-  const stagePaths = buildPipelineStagePaths(runtime.pipelineCacheRootDir, markdownPath);
   const startedAt = new Date().toISOString();
   const sourceMarkdown = await readFile(markdownPath, 'utf8');
   const resourceBaseDir = runtime.resourceBaseDir ?? path.dirname(markdownPath);
+  const contractResolution = await resolveRendererContract({
+    inputPath: markdownPath,
+    markdown: sourceMarkdown,
+    renderer: options.renderer ?? 'lark',
+    ...(options.rendererContractPath ? { rendererContractPath: options.rendererContractPath } : {}),
+    ...(options.rendererDefaultContractPath
+      ? { rendererDefaultContractPath: options.rendererDefaultContractPath }
+      : {}),
+    ...(options.strict === undefined ? {} : { strict: options.strict }),
+  });
+  const resolvedContract = contractResolution.resolved;
+  const stagePaths = buildPipelineStagePaths(runtime.pipelineCacheRootDir, markdownPath, {
+    protocolMode: Boolean(resolvedContract),
+  });
+  if (resolvedContract) {
+    await writeContractStage(stagePaths, resolvedContract, getRendererCapabilities(resolvedContract.contract.renderer));
+  }
 
-  let markdown = sourceMarkdown;
+  let markdown = resolvedContract ? contractResolution.markdownBody : sourceMarkdown;
   for (let presetIndex = 0; presetIndex < runtime.markdownPresets.length; presetIndex += 1) {
     const preset = runtime.markdownPresets[presetIndex]!;
     markdown = await preset.transform(markdown, {
@@ -139,30 +162,112 @@ export async function processSingleMarkdownFile(
     `[prepare ${index + 1}/${inputSet.markdownFiles.length}] rewritten=${prepareResult.rewrittenCount} downloaded=${prepareResult.downloadedCount} failed=${prepareResult.failedCount} log=${prepareResult.logFilePath}`,
   );
 
-  const hast = await markdownToHast(markdown, runtime.markdownParseConfig);
+  const larkTarget = resolvedContract?.contract.targets.lark;
+  const semanticResult = resolvedContract
+    ? await markdownToSemanticHast(markdown, {
+        inputPath: markdownPath,
+        strict: resolvedContract.strict,
+        singleDollarTextMath:
+          runtime.markdownParseConfig.singleDollarTextMath ||
+          Boolean(larkTarget?.math?.inline_delimiters?.includes('dollar')),
+        ...(larkTarget ? { target: larkTarget } : {}),
+      })
+    : null;
+  const hast = semanticResult ? semanticResult.hast : await markdownToHast(markdown, runtime.markdownParseConfig);
   await writeHastStage(stagePaths, hast);
+  if (semanticResult) await writeSemanticStage(stagePaths, semanticResult.semantic);
+  let articleRenderReport: ArticleRenderReport | null =
+    resolvedContract && semanticResult
+      ? createArticleRenderReport({
+          resolved: resolvedContract,
+          source: path.basename(markdownPath),
+          semantic: semanticResult.semantic,
+        })
+      : null;
+  if (articleRenderReport) {
+    await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+  }
+  const semanticErrors =
+    semanticResult?.semantic.diagnostics.filter((diagnostic) => diagnostic.severity === 'error') ?? [];
+  if (semanticErrors.length > 0) {
+    const first = semanticErrors[0]!;
+    throw new Error(`Renderer semantic validation failed with ${semanticErrors.length} error(s): ${first.message}`);
+  }
   const h1RuleResult = options.title ? {} : applySingleH1TitleRule(hast);
   const title = buildTitleForMarkdown(markdownPath, inputSet, options.title, h1RuleResult.derivedTitle, {
     datePrefix: runtime.titleDatePrefix,
   });
   const documentKey = buildPipelineDocumentId(markdownPath);
+  const preparedAliases = new Map<string, string>();
+  for (const entry of prepareResult.logEntries) {
+    if (entry.sourceType === 'image' && entry.localPath) preparedAliases.set(entry.localPath, entry.originalUrl);
+  }
+  let imageManifestResult: Awaited<ReturnType<typeof createImageSizeManifestResolver>> | null = null;
+  const autoManifestPath = path.join(resourceBaseDir, 'assets', 'manifest.yml');
+  const imageManifestPath = options.imageSizeManifestPath
+    ? path.resolve(options.imageSizeManifestPath)
+    : resolvedContract && larkTarget?.figures?.preserve_source_ratio !== false && (await pathExists(autoManifestPath))
+      ? autoManifestPath
+      : '';
+  if (imageManifestPath) {
+    imageManifestResult = await createImageSizeManifestResolver(imageManifestPath, {
+      resourceBaseDir,
+      preparedAliases,
+    });
+  }
+  const imageSizeResolver = composeImageSizeResolvers(runtime.imageSizeResolver, imageManifestResult?.resolver);
   const last = hastToLAST(hast, {
     documentId: documentKey,
     mode: 'fragment',
-    ...(runtime.imageSizeResolver
+    ...(imageSizeResolver
       ? {
-          imageSizeResolver: runtime.imageSizeResolver,
+          imageSizeResolver,
           imageSizeContext: {
             inputPath: markdownPath,
             resourceBaseDir,
           },
         }
       : {}),
+    ...(larkTarget ? { semanticTarget: larkTarget } : {}),
   });
   await writeLastStage(stagePaths, last);
+  if (resolvedContract && semanticResult) {
+    articleRenderReport = createArticleRenderReport({
+      resolved: resolvedContract,
+      source: path.basename(markdownPath),
+      semantic: semanticResult.semantic,
+      last,
+      ...(imageManifestResult ? { imageSizing: imageManifestResult.resolutions } : {}),
+    });
+    await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+  }
 
   ensureLastBlockBttIds(last);
-  const localAssetByBlockId = applyStandaloneAttachmentTransforms(last, resourceBaseDir);
+  let localAssetByBlockId: ReturnType<typeof applyStandaloneAttachmentTransforms>;
+  try {
+    localAssetByBlockId = applyStandaloneAttachmentTransforms(last, resourceBaseDir, {
+      missingLocalImage: resolvedContract?.strict ? 'error' : 'fallback',
+    });
+    if (resolvedContract?.strict) {
+      for (const block of Object.values(last.blocks)) {
+        if (block.type !== 'image' || localAssetByBlockId.has(block.id) || block.payload.token) continue;
+        const sourceUrl = block.selector?.attrs?.sourceUrl;
+        throw new Error(`Unresolved image asset: ${typeof sourceUrl === 'string' ? sourceUrl : block.id}`);
+      }
+    }
+    if (resolvedContract) assertValidLastForLark(last);
+  } catch (error) {
+    if (articleRenderReport) {
+      articleRenderReport.errors.push({
+        severity: 'error',
+        code: 'lark-prepublish-validation',
+        message: error instanceof Error ? error.message : String(error),
+        sourcePath: markdownPath,
+      });
+      await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+    }
+    throw error;
+  }
   applyTableColumnWidthHeuristics(last);
   const mermaidByBlockId = collectMermaidPatches(last);
 
@@ -178,6 +283,17 @@ export async function processSingleMarkdownFile(
     mermaidBoard: runtime.mermaidRenderConfig.board,
     localAssetCount: localAssetByBlockId.size,
   });
+  if (resolvedContract && semanticResult) {
+    articleRenderReport = createArticleRenderReport({
+      resolved: resolvedContract,
+      source: path.basename(markdownPath),
+      semantic: semanticResult.semantic,
+      last,
+      bttBlockTypes: Object.values(btt.flatBlocks).map((block) => block.block_type),
+      ...(imageManifestResult ? { imageSizing: imageManifestResult.resolutions } : {}),
+    });
+    await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+  }
 
   if (options.dryRun) {
     const dryRunArtifact: PublishStageArtifact = {
@@ -263,6 +379,39 @@ export async function processSingleMarkdownFile(
     if (captured.error !== undefined) {
       throw captured.error;
     }
+    if (resolvedContract && semanticResult && articleRenderReport) {
+      const remoteBlocks = await listAllDocumentBlocks(
+        runtime.sdkClient,
+        documentId,
+        runtime.authOptions,
+        runtime.docxLimiter,
+      );
+      articleRenderReport = createArticleRenderReport({
+        resolved: resolvedContract,
+        source: path.basename(markdownPath),
+        semantic: semanticResult.semantic,
+        last,
+        bttBlockTypes: Object.values(btt.flatBlocks).map((block) => block.block_type),
+        ...(imageManifestResult ? { imageSizing: imageManifestResult.resolutions } : {}),
+        remoteBlockTypes: remoteBlocks.map((block) => block.block_type),
+      });
+      for (const blockType of [19, 27, 31]) {
+        const expected = Object.values(btt.flatBlocks).filter((block) => block.block_type === blockType).length;
+        const actual = remoteBlocks.filter((block) => block.block_type === blockType).length;
+        if (expected !== actual) {
+          articleRenderReport.errors.push({
+            severity: 'error',
+            code: 'remote-block-count-mismatch',
+            message: `Remote block_type=${blockType} count ${actual} does not match emitted count ${expected}.`,
+            sourcePath: markdownPath,
+          });
+        }
+      }
+      await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+      if (resolvedContract.strict && articleRenderReport.errors.length > 0) {
+        throw new Error(articleRenderReport.errors[0]!.message);
+      }
+    }
   } catch (error) {
     if (failedBlocks.length === 0) {
       failedBlocks = inferFailedBlocksFromError(error);
@@ -282,6 +431,15 @@ export async function processSingleMarkdownFile(
       error: error instanceof Error ? error.message : String(error),
     };
     await writePublishStageArtifact(stagePaths, failedArtifact);
+    if (articleRenderReport) {
+      articleRenderReport.errors.push({
+        severity: 'error',
+        code: 'lark-publish-or-verify',
+        message: error instanceof Error ? error.message : String(error),
+        sourcePath: markdownPath,
+      });
+      await writeRenderReport(stagePaths, articleRenderReport, options.renderReportPath);
+    }
     throw error;
   }
 
@@ -317,4 +475,13 @@ export async function processSingleMarkdownFile(
     documentUrl,
     status: 'published',
   };
+}
+
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }

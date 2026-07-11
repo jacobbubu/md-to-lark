@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { RenderFailedNode, RenderMediaTokenMapping } from '../lark/docx/render-btt.js';
 import type { PrepareMarkdownLogFile, PrepareMarkdownResult } from '../pipeline/markdown/prepare-markdown.js';
+import type { RendererCapabilities, ResolvedRendererContract } from '../protocol/types.js';
 
 function buildPrepareDirForSource(prepareRootDir: string, sourcePath: string): string {
   const sourceHash = createHash('sha1').update(path.resolve(sourcePath)).digest('hex').slice(0, 12);
@@ -13,8 +14,10 @@ function buildPrepareDirForSource(prepareRootDir: string, sourcePath: string): s
 export interface PipelineStagePaths {
   rootDir: string;
   sourceDir: string;
+  contractDir: string;
   prepareDir: string;
   hastDir: string;
+  semanticDir: string;
   lastDir: string;
   bttDir: string;
   publishDir: string;
@@ -35,16 +38,23 @@ export interface PublishStageArtifact {
   error?: string;
 }
 
-export function buildPipelineStagePaths(cacheRootDir: string, sourcePath: string): PipelineStagePaths {
+export function buildPipelineStagePaths(
+  cacheRootDir: string,
+  sourcePath: string,
+  options: { protocolMode?: boolean } = {},
+): PipelineStagePaths {
   const rootDir = buildPrepareDirForSource(cacheRootDir, sourcePath);
+  const protocolMode = Boolean(options.protocolMode);
   return {
     rootDir,
     sourceDir: path.join(rootDir, '00-source'),
-    prepareDir: path.join(rootDir, '01-prepare'),
-    hastDir: path.join(rootDir, '02-hast'),
-    lastDir: path.join(rootDir, '03-last'),
-    bttDir: path.join(rootDir, '04-btt'),
-    publishDir: path.join(rootDir, '05-publish'),
+    contractDir: path.join(rootDir, '01-contract'),
+    prepareDir: path.join(rootDir, protocolMode ? '02-prepare' : '01-prepare'),
+    hastDir: path.join(rootDir, protocolMode ? '03-hast' : '02-hast'),
+    semanticDir: path.join(rootDir, '04-semantic'),
+    lastDir: path.join(rootDir, protocolMode ? '05-last' : '03-last'),
+    bttDir: path.join(rootDir, protocolMode ? '06-btt' : '04-btt'),
+    publishDir: path.join(rootDir, protocolMode ? '07-publish' : '05-publish'),
   };
 }
 
@@ -91,6 +101,36 @@ export async function writePrepareLogFile(filePath: string, value: PrepareMarkdo
 
 export async function writeHastStage(stagePaths: PipelineStagePaths, hast: unknown): Promise<void> {
   await writeJson(path.join(stagePaths.hastDir, 'hast.json'), hast);
+}
+
+export async function writeContractStage(
+  stagePaths: PipelineStagePaths,
+  resolved: ResolvedRendererContract,
+  capabilities: RendererCapabilities,
+): Promise<void> {
+  await writeJson(path.join(stagePaths.contractDir, 'selected.json'), {
+    selectedPath: resolved.selectedPath,
+    selection: resolved.selection,
+    loadedPaths: resolved.loadedPaths,
+    strict: resolved.strict,
+  });
+  await ensureDir(stagePaths.contractDir);
+  const { stringify: stringifyYaml } = await import('yaml');
+  await writeFile(path.join(stagePaths.contractDir, 'resolved.yml'), stringifyYaml(resolved.contract), 'utf8');
+  await writeJson(path.join(stagePaths.contractDir, 'capabilities.json'), capabilities);
+}
+
+export async function writeSemanticStage(stagePaths: PipelineStagePaths, semantic: unknown): Promise<void> {
+  await writeJson(path.join(stagePaths.semanticDir, 'semantic.json'), semantic);
+}
+
+export async function writeRenderReport(
+  stagePaths: PipelineStagePaths,
+  report: unknown,
+  explicitPath?: string,
+): Promise<void> {
+  await writeJson(path.join(stagePaths.rootDir, 'render-report.json'), report);
+  if (explicitPath) await writeJson(path.resolve(explicitPath), report);
 }
 
 export async function writeLastStage(stagePaths: PipelineStagePaths, last: unknown): Promise<void> {

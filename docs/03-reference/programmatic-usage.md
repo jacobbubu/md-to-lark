@@ -8,11 +8,15 @@
 
 ## 当前导出面
 
-当前根导出非常小，只暴露两项：
+根导出除发布入口外，也包含 renderer contract 的发现和校验 API：
 
 1. `publishMdToLark`
 2. `PublishMdCliOptions`
 3. `PublishMdResult`
+4. `PublishMdToLarkOptions`
+5. `resolveRendererContract`
+6. `validateRendererContract`
+7. `getRendererCapabilities`
 
 也就是说，当前对外程序化调用的主入口就是：
 
@@ -70,6 +74,12 @@ const results = await publishMdToLark(options, env);
 18. `mermaidBoardStyleType`
 19. `mermaidBoardDiagramType`
 20. `dryRun`
+21. `renderer`
+22. `rendererContractPath`
+23. `rendererDefaultContractPath`
+24. `strict`
+25. `renderReportPath`
+26. `imageSizeManifestPath`
 
 这些字段和 CLI 参数大体对应。
 
@@ -181,6 +191,47 @@ const results = await publishMdToLark(
 6. `context` 会提供 `inputPath`、`resourceBaseDir`、`alt`、`title`
 
 当前实现把 `widthRatio` 映射到飞书 image block 的 `width` 字段，也就是默认正文宽度乘以该比例；`widthPx` 也可作为低优先级的绝对宽度备用值。
+
+也可以直接传 `assets/manifest.yml`：
+
+```ts
+await publishMdToLark(
+  {
+    inputPath: './article/index-zh.md',
+    resourceBaseDir: './article',
+    folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    imageSizeManifestPath: './article/assets/manifest.yml',
+    dryRun: true,
+  },
+  process.env,
+);
+```
+
+manifest 支持 Markdown 相对路径、`./` 路径、绝对路径、原始 `source_url` 和远程图片下载后的临时路径别名。比例优先于像素宽度，最终宽度不会超过飞书正文默认宽度；有 `aspect_ratio` 时会同步写入高度。
+
+## article-render/v1
+
+有 renderer contract 时，发布器进入协议模式；没有合同时继续使用 legacy 行为。
+
+```ts
+await publishMdToLark(
+  {
+    inputPath: './article/index-zh.md',
+    resourceBaseDir: './article',
+    folderToken: process.env.LARK_FOLDER_TOKEN ?? '',
+    renderer: 'lark',
+    rendererContractPath: './article/index-zh.lark.yml',
+    strict: true,
+    renderReportPath: './article/reports/index-zh.lark-report.json',
+    dryRun: true,
+  },
+  process.env,
+);
+```
+
+合同选择优先级是：显式 `rendererContractPath`、frontmatter 声明、同目录 `<basename>.lark.yml`、`rendererDefaultContractPath`。协议模式会移除 frontmatter，并在远端文档创建或清空前完成 capability、directive、footnote、KaTeX、资源和 Lark parent-child 校验。
+
+如果调用方把 Markdown 复制到临时目录，应该把原文章合同解析成绝对路径后传入 `rendererContractPath`；`resourceBaseDir` 仍指向原文章目录。
 
 ## 一个真实发布例子
 

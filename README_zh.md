@@ -175,6 +175,9 @@ npm run test:e2e:watch
 - 标题推导、标题前缀和单 H1 标题提升
 - 本地附件/图片识别与真实上传
 - 通过 `imageSizeResolver` 在程序化调用中控制图片显示宽度
+- 支持带继承、能力协商、严格发布前校验和渲染报告的 `article-render/v1` 合同
+- 把 figure、table、equation、callout 和 GFM footnote 映射成飞书原生块结构
+- 协议模式自动读取 `assets/manifest.yml` 中的图片展示比例
 - 远程图片下载与独立 URL 预处理
 - Mermaid `text-drawing` 和 `board` 两条输出路径
 - 面向论文/LaTeX 密集内容的单美元行内公式显式开启选项

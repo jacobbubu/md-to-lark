@@ -20,11 +20,18 @@
 - `publish.runtime.test.ts`
 - `publish.stage-cache.test.ts`
 - `publish.process-file.test.ts`
+- `publish.protocol-process.test.ts`
+- `publish.image-size-manifest.test.ts`
 
 `pipeline.*.test.ts`：pipeline 与 markdown 转换层
 
 - `pipeline.prepare-markdown.test.ts`
 - `pipeline.md-hast-last.test.ts`
+- `pipeline.semantic-protocol.test.ts`
+
+`protocol.*.test.ts`：`article-render/v1` 合同发现、继承、能力协商和严格校验
+
+- `protocol.contract.test.ts`
 
 `cli.*.test.ts`：CLI 启动与打包输出层
 
@@ -40,6 +47,7 @@
 - `lark.docx.render-post-process.test.ts`
 - `lark.docx.render-table.test.ts`
 - `publish.image-width.live.test.ts`
+- `publish.article-render.live.test.ts`
 
 `shared.*.test.ts`：共享基础能力
 

@@ -88,3 +88,27 @@ test('CLI --help exits with code 0 and prints usage', async () => {
   assert.match(result.stdout, /--help, -h/);
   assert.equal(result.stderr.trim(), '');
 });
+
+test('CLI --print-capabilities does not require publish credentials', async () => {
+  const result = await runCli(['--print-capabilities'], {});
+  assert.equal(result.code, 0);
+  const payload = JSON.parse(result.stdout) as { protocols?: string[]; capabilities?: Record<string, number> };
+  assert.deepEqual(payload.protocols, ['article-render/v1']);
+  assert.equal(payload.capabilities?.['semantic-directives'], 1);
+  assert.equal(result.stderr, '');
+});
+
+test('CLI --validate-contract validates a standalone contract without publish credentials', async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'md-to-lark-cli-contract-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const contractPath = path.join(dir, 'index.lark.yml');
+  await writeFile(
+    contractPath,
+    `protocol: article-render/v1\nrenderer: lark\ndocument: { source: index.md }\nrequirements: [semantic-directives]\ntargets: { lark: {} }\n`,
+  );
+  const result = await runCli(['--validate-contract', contractPath], {});
+  assert.equal(result.code, 0);
+  const payload = JSON.parse(result.stdout) as { contract?: { protocol?: string }; strict?: boolean };
+  assert.equal(payload.contract?.protocol, 'article-render/v1');
+  assert.equal(result.stderr, '');
+});
