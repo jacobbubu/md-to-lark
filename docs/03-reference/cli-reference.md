@@ -63,9 +63,11 @@ publish-md-to-lark --validate-contract ./index-zh.lark.yml
 
 ## Renderer contract
 
-`--renderer-contract` 显式选择 `article-render/v1` 合同，优先级高于 frontmatter 和同目录自动发现。`--strict` 要求合同存在，并把未知 directive、重复 ID、footnote 不匹配、缺图、非法表格、KaTeX 错误和不允许的飞书父子关系作为发布前错误。
+`--renderer-contract` 显式选择 `article-render/v1` 合同，优先级高于 frontmatter 和同目录自动发现。`--strict` 要求合同存在，并把未知 directive、重复 ID、footnote 不匹配、缺图、非法表格、KaTeX 错误、会被丢弃的可见 raw HTML 和不允许的飞书父子关系作为发布前错误。
 
 `--render-report` 把 source semantic、LAST、BTT、图片尺寸匹配和远端 block count 写入 JSON。协议模式的 pipeline cache 根目录也会生成 `render-report.json`。
+
+协议模式的 `currency_policy: protect` 会把 `$45,000`、`$50k/year`、`$2.4T`、`$20-$30` 等金额保留为普通文本，同时继续解析 `$P(y \mid x)$` 等明确公式。纯 HTML 注释允许存在；其他 raw HTML 在严格模式报错、非严格模式给出 warning，避免内容被静默丢弃。
 
 ## 标准输出与标准错误
 
@@ -142,7 +144,8 @@ stderr 负责：
 
 限制：
 
-1. 如果没有传 `--doc`，那就必须能拿到 folder token
+1. 正式发布时，如果没有传 `--doc`，那就必须能拿到 folder token
+2. 纯本地 `--dry-run` 不需要 folder token
 
 ### `--doc <document_id>`
 
@@ -269,7 +272,8 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 注意：
 
 1. `--dry-run` 仍然会写阶段缓存
-2. `--dry-run` 仍然会先校验飞书环境变量
+2. `--dry-run` 不要求飞书应用凭据、folder token 或 document id
+3. 如果启用远程图片预处理，dry-run 仍可能访问图片源站
 
 推荐文档：
 
@@ -373,8 +377,8 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 最重要的限制有这些：
 
 1. `--doc` 只支持单文件模式
-2. 如果没有 `--doc`，必须提供 folder token
-3. dry-run 也需要通过飞书配置校验
+2. 正式发布时如果没有 `--doc`，必须提供 folder token
+3. 纯本地 dry-run 不需要飞书配置
 4. 缺失本地资源通常会退化，而不是直接终止
 5. `yt-dlp` 只处理满足 frontmatter 规则的独立 URL 行
 

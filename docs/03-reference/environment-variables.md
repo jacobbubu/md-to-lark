@@ -277,19 +277,12 @@ Docx 相关请求的最小间隔。
 
 ## 一组最小可用配置
 
-如果你只是想先跑通 dry-run，最小配置通常至少要有：
-
-```env
-LARK_APP_ID="xxx"
-LARK_APP_SECRET="xxx"
-LARK_FOLDER_TOKEN="xxx"
-LARK_TOKEN_TYPE=tenant
-```
+纯本地 dry-run 不要求任何飞书环境变量。
 
 注意：
 
-1. 当前 dry-run 也会先校验飞书配置
-2. 所以不是“完全不配变量也能运行”
+1. 真实发布仍需要 `LARK_APP_ID`、`LARK_APP_SECRET` 和 folder/document 目标
+2. dry-run 启用远程资源预处理时仍可能访问外部资源
 
 ## 什么时候变量会被命令行覆盖
 

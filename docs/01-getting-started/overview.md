@@ -77,7 +77,7 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run
 
 这条命令不会写飞书文档，但会完整走一遍发布流水线，并把中间产物写到默认的 pipeline cache 目录。
 
-注意，当前 CLI 即使在 `--dry-run` 模式下，也仍然会先校验飞书相关环境变量，所以你仍然需要准备好最小的 `.env` 配置。
+纯本地 `--dry-run` 不要求飞书环境变量或目标位置；真实发布仍需准备有效的 `.env` 和 folder/document 配置。
 
 ## 什么时候不该先看实现
 

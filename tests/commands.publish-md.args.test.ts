@@ -98,6 +98,13 @@ test('parsePublishMdArgs parses positional input and --doc without folder', () =
   });
 });
 
+test('parsePublishMdArgs allows pure local dry-run without folder or document', () => {
+  const options = parsePublishMdArgs(['--input', './examples/a.md', '--strict', '--dry-run'], {});
+  assert.equal(options.folderToken, '');
+  assert.equal(options.documentId, undefined);
+  assert.equal(options.dryRun, true);
+});
+
 test('parsePublishMdArgs parses prepare options', () => {
   const options = parsePublishMdArgs(
     [
@@ -208,7 +215,8 @@ test('getPublishMdUsage returns usage text with key options', () => {
   assert.match(usage, /built-in name/);
   assert.match(usage, /--dry-run/);
   assert.match(usage, /--help, -h/);
-  assert.match(usage, /frontmatter is rewritten as fenced code block/i);
+  assert.match(usage, /article-render\/v1 protocol mode.*frontmatter.*removed from visible output/i);
+  assert.match(usage, /legacy mode.*legacy preparation policy/i);
   assert.match(usage, /Missing local asset files are skipped\/degraded/i);
   assert.match(usage, /Relative local asset paths resolve against the markdown file directory by default/i);
 });

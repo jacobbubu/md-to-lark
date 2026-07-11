@@ -81,6 +81,23 @@ test('CLI dry-run exits with code 0 for a valid markdown input', async (t) => {
   assert.match(result.stderr, /\[dry-run 1\/1\] input:/);
 });
 
+test('CLI pure local dry-run does not require destination or Lark credentials', async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'md-to-lark-cli-local-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'local.md');
+  await writeFile(file, '# Local\n\ncontent', 'utf8');
+  const result = await runCli(['--input', file, '--dry-run'], {
+    LARK_APP_ID: '',
+    LARK_APP_SECRET: '',
+    LARK_FOLDER_TOKEN: '',
+    FEISHU_FOLDER_TOKEN: '',
+  });
+  assert.equal(result.code, 0);
+  const payload = JSON.parse(result.stdout) as Array<{ status?: string; documentId?: string | null }>;
+  assert.equal(payload[0]?.status, 'dry-run');
+  assert.equal(payload[0]?.documentId, null);
+});
+
 test('CLI --help exits with code 0 and prints usage', async () => {
   const result = await runCli(['--help'], baseEnv);
   assert.equal(result.code, 0);

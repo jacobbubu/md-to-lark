@@ -43,8 +43,8 @@ LARK_TOKEN_TYPE=tenant
 
 注意两点：
 
-1. 当前 CLI 在 `--dry-run` 模式下也会先校验飞书应用配置，所以不是“零配置即可运行”。
-2. 如果你不提供 `--doc`，那就必须提供 `LARK_FOLDER_TOKEN`，否则命令不会开始执行。
+1. 纯本地 `--dry-run` 不需要飞书应用配置或目标位置。
+2. 正式发布时，如果不提供 `--doc`，就必须提供 `LARK_FOLDER_TOKEN`。
 
 ## 第一步：安装依赖并检查仓库
 
@@ -153,11 +153,11 @@ npm run publish:md -- --input ./test-md/mermaid.md --dry-run --mermaid-target bo
 
 ### 缺少 folder token
 
-如果没有提供 `--doc`，也没有在环境变量里提供 `LARK_FOLDER_TOKEN`，命令会直接报错，不会进入发布链路。
+正式发布时，如果没有提供 `--doc`，也没有在环境变量里提供 `LARK_FOLDER_TOKEN`，命令会直接报错，不会进入发布链路。
 
-### 以为 dry-run 不需要飞书配置
+### 把 dry-run 当成完全离线模式
 
-当前实现里，CLI 会先校验飞书应用配置，再进入 dry-run，所以 `LARK_APP_ID`、`LARK_APP_SECRET` 和 `LARK_TOKEN_TYPE` 仍然需要先配好。
+dry-run 不需要飞书配置，也不会调用飞书 API；但启用远程图片预处理或 `yt-dlp` 时，prepare 阶段仍可能访问外部资源。
 
 ### 目录模式下误用 `--doc`
 

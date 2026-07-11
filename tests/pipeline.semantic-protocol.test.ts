@@ -135,6 +135,130 @@ test('currency adjacent to math remains text while real inline math becomes equa
   assert.match(rendered, /\$20-\$30/);
 });
 
+test('currency protection handles standalone amounts across semantic text contexts', async () => {
+  const markdown = [
+    'Revenue rises from $45,000 per person to $1M per person.',
+    '',
+    '> The median is $50k/year and approximately ~$100M.',
+    '',
+    '- Aid rises from $1,200 to $10k per person.',
+    '',
+    '| Item | Cost |',
+    '| --- | --- |',
+    '| Plan | $2.4T |',
+    '',
+    ':::figure{#fig-currency}',
+    '![](assets/a.png)',
+    '',
+    '::caption[Costs $20-$30, later $20–$30.]',
+    ':::',
+    '',
+    'Statement[^money].',
+    '',
+    '[^money]: Floor $1M, ceiling $10M/yr.',
+    '',
+    'Real math remains math: $P(y \\mid x)$ and $2x + 1$.',
+  ].join('\n');
+  const parsed = await markdownToSemanticHast(markdown, {
+    strict: true,
+    target,
+    singleDollarTextMath: true,
+  });
+  assert.deepEqual(parsed.semantic.diagnostics, []);
+  assert.equal(parsed.semantic.counts.equations, 2);
+  const visible = JSON.stringify(parsed.hast);
+  for (const amount of [
+    '$45,000',
+    '$1M',
+    '$50k/year',
+    '~$100M',
+    '$1,200',
+    '$10k',
+    '$2.4T',
+    '$20-$30',
+    '$20–$30',
+    '$10M/yr',
+  ]) {
+    assert.ok(visible.includes(amount), 'missing visible currency amount: ' + amount);
+  }
+});
+
+test('currency protection leaves code, escaped dollars, display math, and valid inline math intact', async () => {
+  const markdown = [
+    'Inline code: `$45,000` and escaped currency \\$20.',
+    '',
+    '```text',
+    '$1M and $10M',
+    '```',
+    '',
+    '$$',
+    'x = 20',
+    '$$',
+    '',
+    'Inline formula: $2x + 1$.',
+  ].join('\n');
+  const parsed = await markdownToSemanticHast(markdown, {
+    strict: true,
+    target,
+    singleDollarTextMath: true,
+  });
+  assert.deepEqual(parsed.semantic.diagnostics, []);
+  assert.equal(parsed.semantic.counts.equations, 2);
+});
+
+test('currency parse policy retains unprotected dollar parsing behavior', async () => {
+  const parsed = await markdownToSemanticHast('From $20 to $30.', {
+    strict: true,
+    target: { ...target, math: { ...target.math, currency_policy: 'parse' as const } },
+    singleDollarTextMath: true,
+  });
+  assert.equal(parsed.semantic.counts.equations, 1);
+});
+
+test('raw HTML produces a source diagnostic before visible content can be discarded', async () => {
+  const markdown = [
+    'Before.[^1]',
+    '',
+    '<table>',
+    '  <tr><td>Plan A[^2]</td></tr>',
+    '</table>',
+    '',
+    '[^1]: Before.',
+    '[^2]: Inside.',
+  ].join('\n');
+  const strict = await markdownToSemanticHast(markdown, { strict: true, target, inputPath: '/tmp/article.md' });
+  const diagnostic = strict.semantic.diagnostics.find((item) => item.code === 'unsupported-raw-html');
+  assert.deepEqual(diagnostic, {
+    severity: 'error',
+    code: 'unsupported-raw-html',
+    message: 'Raw HTML <table> would be discarded in Lark protocol mode. Convert it to a GFM table before publication.',
+    sourcePath: '/tmp/article.md',
+    line: 3,
+    column: 1,
+  });
+  assert.equal(
+    strict.semantic.diagnostics.some((item) => item.code === 'unreferenced-footnote' && item.message.includes('2')),
+    false,
+  );
+
+  const nonStrict = await markdownToSemanticHast(markdown, { strict: false, target });
+  assert.equal(
+    nonStrict.semantic.diagnostics.find((item) => item.code === 'unsupported-raw-html')?.severity,
+    'warning',
+  );
+});
+
+test('raw HTML comments are accepted as non-visible protocol metadata', async () => {
+  const parsed = await markdownToSemanticHast('Before.\n\n<!-- renderer metadata -->\n\nAfter.', {
+    strict: true,
+    target,
+  });
+  assert.equal(
+    parsed.semantic.diagnostics.some((item) => item.code === 'unsupported-raw-html'),
+    false,
+  );
+});
+
 test('equation auto numbering, document wrapper normalization, labels and contract macros are materialized', async () => {
   const parsed = await markdownToSemanticHast(
     `:::equation{#eq-one number="auto"}\n$$\n\\begin{equation}\\label{eq-inner} x \\in \\R\\end{equation}\n$$\n:::\n`,

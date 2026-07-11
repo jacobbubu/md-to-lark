@@ -56,8 +56,8 @@ LARK_DOCUMENT_BASE_URL="https://li.feishu.cn"
 
 注意：
 
-- `--dry-run` 也会先校验飞书配置，不是零配置模式。
-- 只要没有传 `--doc`，就必须提供 `LARK_FOLDER_TOKEN`，无论是单文件、目录、dry-run 还是正式发布。
+- 纯本地 `--dry-run` 不要求飞书凭据、`--folder` 或 `--doc`。
+- 正式发布必须提供 `--doc`，或通过 `LARK_FOLDER_TOKEN`/`--folder` 指定目标文件夹，同时配置有效飞书凭据。
 
 第一次建议直接跑仓库内置样例：
 

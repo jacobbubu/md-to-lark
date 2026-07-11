@@ -109,7 +109,7 @@ export async function publishMdToLark(
     folderToken: options.folderToken?.trim() || env.LARK_FOLDER_TOKEN?.trim() || '',
     dryRun: options.dryRun ?? false,
   };
-  if (!publishOptions.documentId && !publishOptions.folderToken) {
+  if (!publishOptions.dryRun && !publishOptions.documentId && !publishOptions.folderToken) {
     throw new Error('Folder token is required when documentId is not provided.');
   }
   const inputSet = await resolvePublishInputSet(publishOptions.inputPath);
