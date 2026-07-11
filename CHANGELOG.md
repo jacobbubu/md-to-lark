@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/jacobbubu/md-to-lark/compare/v1.6.0...v1.7.0) (2026-07-11)
+
+
+### Features
+
+* support article-render/v1 protocol ([6bd9cac](https://github.com/jacobbubu/md-to-lark/commit/6bd9cacd1e57eeaad68d9eb324b57f4df1a79396))
+
 # [1.6.0](https://github.com/jacobbubu/md-to-lark/compare/v1.5.1...v1.6.0) (2026-07-03)
 
 ### Features
