@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/jacobbubu/md-to-lark/compare/v1.7.0...v1.7.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* prevent protocol content loss ([53245a2](https://github.com/jacobbubu/md-to-lark/commit/53245a26cf55e62cfa64e0e58d93f5274fe22ee3))
+
 # [1.7.0](https://github.com/jacobbubu/md-to-lark/compare/v1.6.0...v1.7.0) (2026-07-11)
 
 
