@@ -4,3 +4,5 @@ out/
 .env
 .env-test
 .DS_Store
+.omx/
+.playwright-mcp/
