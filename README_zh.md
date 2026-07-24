@@ -88,6 +88,18 @@ CLI 成功执行后会在 stdout 打印一个 JSON 数组，每项都包含：
 
 本地相对资源，例如 `./img-001.png`，默认还是相对 Markdown 文件所在目录解析。如果调用方会把临时 Markdown 写到别的目录，再交给 CLI 发布，就应该显式传 `--resource-base-dir`，把资源解析基目录固定回原始内容目录。
 
+## Markdown 语法说明
+
+行内 `<mark>text</mark>` 会被作为受控 HTML 简写处理，并映射为飞书黄色文字背景高亮。
+
+示例：
+
+```md
+这是 <mark>重点内容</mark>。
+```
+
+`<mark>...</mark>` 内部的 Markdown 样式会保留，例如 `**加粗**` 和链接。这个能力不会打开任意原始 HTML 渲染；不支持的 HTML 仍保持现有解析行为。
+
 ## 常用命令
 
 基础发布：
@@ -182,6 +194,7 @@ npm run test:e2e:watch
 - Mermaid `text-drawing` 和 `board` 两条输出路径
 - 面向论文/LaTeX 密集内容的单美元行内公式显式开启选项
 - 表格列宽启发式与数字列右对齐
+- 行内 `<mark>text</mark>` 映射为飞书黄色文字背景
 - 中文 Markdown 格式化 preset（`zh-format`）
 - CLI 和程序化调用都支持按顺序组合多个 preset
 - `00-source` 到 `05-publish` 的阶段缓存输出

@@ -30,7 +30,8 @@ Markdown -> HAST -> LAST
 1. `remark-parse`
 2. `remark-gfm`
 3. `remark-math`
-4. `remark-rehype`
+4. `remarkMarkToHast`
+5. `remark-rehype`
 
 这意味着在进入项目自定义逻辑之前，Markdown 已经具备：
 
@@ -54,6 +55,8 @@ Markdown -> HAST -> LAST
 1. inline code 里的 `` `$x_t$` `` 保持代码
 2. fenced code block 里的 `$...$` 保持代码内容
 3. GFM table cell 里的 `$...$` 会在开启后正常进入 inline equation
+
+另外，`<mark>...</mark>` 是一个受控例外。它会在 `remark-rehype` 之前被改写成可进入 HAST 的 `mark` 元素，后续再映射为飞书文字黄色背景。这个规则只针对成对的行内 `<mark>` 标签，不等于启用任意 HTML 渲染。
 
 ## frontmatter 的两种模式
 
@@ -166,6 +169,15 @@ Markdown -> HAST -> LAST
 当前实现会把 KaTeX 行内和块级公式映射成：
 
 1. `equation` inline
+
+### 行内高亮
+
+Markdown 里的行内 `<mark>text</mark>` 会映射成：
+
+1. `text_run`
+2. `marks.backgroundColor = "light_yellow"`
+
+转换到飞书 BTT 时，对应写入 `text_element_style.background_color`。`<mark>` 内部可以继续嵌套加粗和链接等行内样式。
 
 ### 表格
 

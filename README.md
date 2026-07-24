@@ -88,6 +88,18 @@ Progress logs and exceptions are written to stderr.
 
 Relative local assets such as `./img-001.png` still resolve against the Markdown file directory by default. If your caller generates a temporary Markdown file elsewhere, use `--resource-base-dir` to keep local asset resolution pinned to the original content directory.
 
+## Markdown Syntax Notes
+
+Inline `<mark>text</mark>` is supported as a controlled HTML shorthand for Feishu yellow text background highlight.
+
+Example:
+
+```md
+This is <mark>important text</mark>.
+```
+
+Nested Markdown marks inside `<mark>...</mark>`, such as `**bold**` and links, are preserved. This does not enable arbitrary raw HTML rendering; unsupported HTML keeps the existing parser behavior.
+
 ## Common Commands
 
 Basic publish:
@@ -182,6 +194,7 @@ Guardrails:
 - Mermaid `text-drawing` and `board` output paths
 - Opt-in single-dollar inline math parsing for LaTeX-heavy papers
 - Table width heuristics and numeric-column right alignment
+- Inline `<mark>text</mark>` mapped to Feishu yellow text background
 - Chinese Markdown formatting preset (`zh-format`)
 - Ordered preset composition from CLI and programmatic usage
 - Legacy stage cache output from `00-source` to `05-publish`; protocol mode adds contract and semantic stages through `07-publish`

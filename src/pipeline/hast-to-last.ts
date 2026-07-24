@@ -677,6 +677,9 @@ function parseInlineNodes(
     if (node.tagName === 'u') {
       nextMarks.underline = true;
     }
+    if (node.tagName === 'mark') {
+      nextMarks.backgroundColor = 'light_yellow';
+    }
     if (node.tagName === 'a' || node.tagName === 'm2l-footnote-reference') {
       const href = getStringProp(node, 'href');
       nextMarks.link = href ? { url: href } : null;
