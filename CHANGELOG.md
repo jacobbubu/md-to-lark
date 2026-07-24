@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/jacobbubu/md-to-lark/compare/v1.7.1...v1.8.0) (2026-07-24)
+
+
+### Features
+
+* support mark highlight background ([#56](https://github.com/jacobbubu/md-to-lark/issues/56)) ([178776b](https://github.com/jacobbubu/md-to-lark/commit/178776b654712df4b676d4a8a12c47d5b1eb30be))
+
 ## [1.7.1](https://github.com/jacobbubu/md-to-lark/compare/v1.7.0...v1.7.1) (2026-07-11)
 
 
