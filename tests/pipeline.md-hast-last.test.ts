@@ -83,8 +83,14 @@ function collectSourceBoldIntentTexts(markdown: string): string[] {
 
 function collectLASTTextRuns(
   last: ReturnType<typeof hastToLAST>,
-): Array<{ text: string; bold: boolean; link: string | null; inlineCode: boolean }> {
-  const runs: Array<{ text: string; bold: boolean; link: string | null; inlineCode: boolean }> = [];
+): Array<{ text: string; bold: boolean; link: string | null; inlineCode: boolean; backgroundColor: string | null }> {
+  const runs: Array<{
+    text: string;
+    bold: boolean;
+    link: string | null;
+    inlineCode: boolean;
+    backgroundColor: string | null;
+  }> = [];
 
   for (const block of Object.values(last.blocks)) {
     const inlines = (block as { payload?: { inlines?: unknown[] } }).payload?.inlines;
@@ -93,13 +99,14 @@ function collectLASTTextRuns(
       const record = inline as { kind?: unknown; text?: unknown; marks?: { bold?: unknown } };
       if (record.kind === 'text_run' && typeof record.text === 'string') {
         const marks = record.marks as
-          | { bold?: unknown; inlineCode?: unknown; link?: { url?: unknown } | null }
+          | { bold?: unknown; inlineCode?: unknown; link?: { url?: unknown } | null; backgroundColor?: unknown }
           | undefined;
         runs.push({
           text: record.text,
           bold: marks?.bold === true,
           link: typeof marks?.link?.url === 'string' ? marks.link.url : null,
           inlineCode: marks?.inlineCode === true,
+          backgroundColor: typeof marks?.backgroundColor === 'string' ? marks.backgroundColor : null,
         });
       }
     }
@@ -125,8 +132,10 @@ function collectLASTEquations(last: ReturnType<typeof hastToLAST>): string[] {
   return equations;
 }
 
-function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean; link: unknown }> {
-  const runs: Array<{ text: string; bold: boolean; link: unknown }> = [];
+function collectBTTTextRuns(
+  value: unknown,
+): Array<{ text: string; bold: boolean; link: unknown; backgroundColor: unknown }> {
+  const runs: Array<{ text: string; bold: boolean; link: unknown; backgroundColor: unknown }> = [];
   const seen = new WeakSet<object>();
 
   const visit = (node: unknown): void => {
@@ -142,7 +151,7 @@ function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean
     const record = node as {
       text_run?: {
         content?: unknown;
-        text_element_style?: { bold?: unknown };
+        text_element_style?: { bold?: unknown; background_color?: unknown; link?: unknown };
       };
     };
     if (typeof record.text_run?.content === 'string') {
@@ -150,6 +159,7 @@ function collectBTTTextRuns(value: unknown): Array<{ text: string; bold: boolean
         text: record.text_run.content,
         bold: record.text_run.text_element_style?.bold === true,
         link: record.text_run.text_element_style?.link ?? null,
+        backgroundColor: record.text_run.text_element_style?.background_color ?? null,
       });
     }
 
@@ -317,6 +327,74 @@ test('hastToLAST blockquote preserves inline bold link and code marks', async ()
 
   assert.equal(bttGithubRun?.bold, true);
   assert.equal(typeof bttOpenAiRun?.link, 'object');
+});
+
+test('hastToLAST maps markdown mark tags to yellow text background', async () => {
+  const markdown = 'Before <mark>重点内容</mark> after';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'mark-highlight' });
+  const btt = convertLASTToBTT(last, { documentId: 'mark-highlight' });
+
+  assert.equal(hasTagName(hast, 'mark'), true);
+
+  const lastRuns = collectLASTTextRuns(last);
+  const markedRun = lastRuns.find((run) => run.text === '重点内容');
+  assert.equal(markedRun?.backgroundColor, 'light_yellow');
+  assert.equal(lastRuns.map((run) => run.text).join(''), 'Before 重点内容 after');
+
+  const bttRuns = collectBTTTextRuns(btt);
+  const bttMarkedRun = bttRuns.find((run) => run.text === '重点内容');
+  assert.equal(bttMarkedRun?.backgroundColor, 3);
+});
+
+test('hastToLAST combines mark tags with nested bold and links', async () => {
+  const markdown = 'Before <mark>**重点** [链接](https://example.com)</mark> after';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'mark-nested' });
+  const btt = convertLASTToBTT(last, { documentId: 'mark-nested' });
+
+  const lastRuns = collectLASTTextRuns(last);
+  const boldRun = lastRuns.find((run) => run.text === '重点');
+  const linkRun = lastRuns.find((run) => run.text === '链接');
+
+  assert.equal(boldRun?.bold, true);
+  assert.equal(boldRun?.backgroundColor, 'light_yellow');
+  assert.equal(linkRun?.link, 'https://example.com');
+  assert.equal(linkRun?.backgroundColor, 'light_yellow');
+
+  const bttRuns = collectBTTTextRuns(btt);
+  const bttBoldRun = bttRuns.find((run) => run.text === '重点');
+  const bttLinkRun = bttRuns.find((run) => run.text === '链接');
+
+  assert.equal(bttBoldRun?.bold, true);
+  assert.equal(bttBoldRun?.backgroundColor, 3);
+  assert.equal(typeof bttLinkRun?.link, 'object');
+  assert.equal(bttLinkRun?.backgroundColor, 3);
+});
+
+test('markdown mark tags inside inline code stay literal text', async () => {
+  const markdown = 'Use `<mark>重点内容</mark>` literally.';
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'mark-inline-code' });
+
+  assert.equal(hasTagName(hast, 'mark'), false);
+
+  const lastRuns = collectLASTTextRuns(last);
+  const codeRun = lastRuns.find((run) => run.text === '<mark>重点内容</mark>');
+  assert.equal(codeRun?.inlineCode, true);
+  assert.equal(codeRun?.backgroundColor, null);
+});
+
+test('markdown mark tags inside fenced code stay literal text', async () => {
+  const markdown = ['```md', '<mark>重点内容</mark>', '```'].join('\n');
+  const hast = await markdownToHast(markdown);
+  const last = hastToLAST(hast, { mode: 'fragment', documentId: 'mark-fenced-code' });
+
+  assert.equal(hasTagName(hast, 'mark'), false);
+
+  const lastRuns = collectLASTTextRuns(last);
+  const codeRun = lastRuns.find((run) => run.text.includes('<mark>重点内容</mark>'));
+  assert.equal(codeRun?.backgroundColor, null);
 });
 
 test('hastToLAST unknown block element trims boundary newlines', () => {
