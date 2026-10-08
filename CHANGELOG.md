@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/jacobbubu/md-to-lark/compare/v1.8.0...v1.8.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **preset:** preserve spacing around Markdown links ([#26](https://github.com/jacobbubu/md-to-lark/issues/26)) ([31e98ab](https://github.com/jacobbubu/md-to-lark/commit/31e98ab23955d54ac11868fb51da686998456f61))
+
 # [1.8.0](https://github.com/jacobbubu/md-to-lark/compare/v1.7.1...v1.8.0) (2026-07-24)
 
 
