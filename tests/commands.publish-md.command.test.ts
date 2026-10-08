@@ -11,6 +11,71 @@ const baseEnv: NodeJS.ProcessEnv = {
   LARK_TOKEN_TYPE: 'tenant',
 };
 
+interface RichTextRun {
+  text: string;
+  link: string | null;
+}
+
+function collectLastTextRuns(value: unknown): RichTextRun[] {
+  if (value === null || typeof value !== 'object') return [];
+  const blocks = (value as { blocks?: unknown }).blocks;
+  if (blocks === null || typeof blocks !== 'object') return [];
+
+  const runs: RichTextRun[] = [];
+  for (const block of Object.values(blocks as Record<string, unknown>)) {
+    if (block === null || typeof block !== 'object') continue;
+    const inlines = (block as { payload?: { inlines?: unknown } }).payload?.inlines;
+    if (!Array.isArray(inlines)) continue;
+
+    for (const inline of inlines) {
+      if (inline === null || typeof inline !== 'object') continue;
+      const textRun = inline as {
+        kind?: unknown;
+        text?: unknown;
+        marks?: { link?: { url?: unknown } | null };
+      };
+      if (textRun.kind !== 'text_run' || typeof textRun.text !== 'string') continue;
+      runs.push({
+        text: textRun.text,
+        link: typeof textRun.marks?.link?.url === 'string' ? textRun.marks.link.url : null,
+      });
+    }
+  }
+  return runs;
+}
+
+function collectBttTextRuns(value: unknown, seen = new WeakSet<object>()): RichTextRun[] {
+  if (value === null || typeof value !== 'object' || seen.has(value)) return [];
+  seen.add(value);
+
+  const record = value as Record<string, unknown>;
+  const rawTextRun = record.text_run;
+  if (rawTextRun !== null && typeof rawTextRun === 'object') {
+    const textRun = rawTextRun as {
+      content?: unknown;
+      text_element_style?: { link?: { url?: unknown } | null };
+    };
+    if (typeof textRun.content === 'string') {
+      return [
+        {
+          text: textRun.content,
+          link: typeof textRun.text_element_style?.link?.url === 'string' ? textRun.text_element_style.link.url : null,
+        },
+      ];
+    }
+  }
+
+  const runs: RichTextRun[] = [];
+  for (const child of Object.values(record)) {
+    if (Array.isArray(child)) {
+      for (const item of child) runs.push(...collectBttTextRuns(item, seen));
+      continue;
+    }
+    runs.push(...collectBttTextRuns(child, seen));
+  }
+  return runs;
+}
+
 async function createTempDir(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'md-to-lark-publish-'));
 }
@@ -375,4 +440,68 @@ test('publishMdToLark dry-run applies built-in zh-format preset', async (t) => {
   assert.ok(logs.some((line) => line.includes('Preset: builtin:zh-format')));
   assert.match(sourcePreset, /Harness 将成为解决“模型漂移”的主要工具。/);
   assert.match(sourcePreset, /在 Azure 中部署 3 台 VM。/);
+});
+
+test('publishMdToLark zh-format preset preserves link spacing and clickable rich text', async (t) => {
+  const dir = await createTempDir();
+  t.after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const file = path.join(dir, 'linked-text.md');
+  const cacheRoot = path.join(dir, 'cache');
+  await writeFile(
+    file,
+    [
+      '# 中文链接空格',
+      '',
+      '> [ChrisFirst](https://example.com/chris)在 Twitter 上分享',
+      '>',
+      '> 收到了[Bethesda](https://example.com/bethesda)的通知',
+      '>',
+      '> 项目来自[Maurice Heumann](https://example.com/maurice)，',
+    ].join('\n'),
+    'utf8',
+  );
+
+  await withSilencedConsole(() =>
+    publishMdToLark(
+      {
+        inputPath: file,
+        folderToken: 'fld_dry_run',
+        pipelineCacheDir: cacheRoot,
+        dryRun: true,
+        presetPath: 'zh-format',
+      },
+      baseEnv,
+    ),
+  );
+
+  const cacheEntries = await readdir(cacheRoot, { withFileTypes: true });
+  const stageName = cacheEntries.find((entry) => entry.isDirectory())?.name;
+  assert.ok(stageName);
+  const stageRoot = path.join(cacheRoot, stageName);
+  const sourcePreset = await readFile(path.join(stageRoot, '00-source', 'preset.md'), 'utf8');
+  const last = JSON.parse(await readFile(path.join(stageRoot, '03-last', 'last.json'), 'utf8')) as unknown;
+  const btt = JSON.parse(await readFile(path.join(stageRoot, '04-btt', 'btt.json'), 'utf8')) as unknown;
+
+  assert.match(sourcePreset, /\[ChrisFirst\]\(https:\/\/example\.com\/chris\) 在 Twitter 上分享/);
+  assert.match(sourcePreset, /收到了 \[Bethesda\]\(https:\/\/example\.com\/bethesda\) 的通知/);
+  assert.match(sourcePreset, /来自 \[Maurice Heumann\]\(https:\/\/example\.com\/maurice\)，/);
+
+  const expectedLinks = new Map([
+    ['ChrisFirst', 'https://example.com/chris'],
+    ['Bethesda', 'https://example.com/bethesda'],
+    ['Maurice Heumann', 'https://example.com/maurice'],
+  ]);
+  const bttFlatBlocks = (btt as { flatBlocks?: unknown }).flatBlocks;
+  for (const runs of [collectLastTextRuns(last), collectBttTextRuns(bttFlatBlocks)]) {
+    const visibleText = runs.map((run) => run.text).join('');
+    assert.match(visibleText, /ChrisFirst 在 Twitter 上分享/);
+    assert.match(visibleText, /收到了 Bethesda 的通知/);
+    assert.match(visibleText, /来自 Maurice Heumann，/);
+    for (const [label, url] of expectedLinks) {
+      assert.ok(runs.some((run) => run.text === label && run.link === url));
+    }
+  }
 });
