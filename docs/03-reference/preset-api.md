@@ -156,7 +156,7 @@ export const preset = {
 它们的作用分别是：
 
 1. `medium`：把 Medium 作者页相对链接改写成绝对链接。
-2. `zh-format`：调用 `@jacobbubu/md-zh-format` 做中文 Markdown 格式化，包含中英文混排、数字/单位间距和中文引号规范化；旧的 `zh-smart-quotes` / `cn-smart-quotes` 作为兼容别名继续可用。
+2. `zh-format`：调用 `@jacobbubu/md-zh-format` 做中文 Markdown 格式化，包含普通文本和链接可见文字的中英文混排、数字/单位间距和中文引号规范化；旧的 `zh-smart-quotes` / `cn-smart-quotes` 作为兼容别名继续可用。
 
 ## 加载行为
 

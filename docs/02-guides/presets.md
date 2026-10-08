@@ -74,7 +74,7 @@ npm run publish:md -- --input ./test-md/comp/comp.md --dry-run --preset zh-forma
 
 `zh-format` 的行为比旧的引号规则更完整：
 
-1. 会做中英文混排和数字/单位间距规范化。
+1. 会做中英文混排和数字/单位间距规范化，包括 Markdown 链接可见文字及其相邻正文。
 2. 会做中文语境引号规范化。
 3. 默认保留 frontmatter。
 4. 不改代码块、行内代码、链接目标、图片目标、URL 和其他 Markdown 敏感片段。
